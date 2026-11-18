@@ -76,6 +76,12 @@ rootsh/
 │   ├── PLAN.md            # audit + design + build order
 │   ├── decisions.md       # recorded decisions
 │   ├── verification/      # P0 verification log
-│   └── modules/           # one design doc per phase
+│   ├── modules/           # one design doc per phase, written before code
+│   └── summaries/         # one results doc per phase, numbers from runs
+├── src/rootsh/            # the package
+├── tests/                 # pytest; db_guard.py keeps tests off real DBs
 └── spikes/                # P0 throwaway probes, kept for reproducibility
 ```
+
+Checks (all must pass before a merge): `uv run ruff check`,
+`uv run ruff format --check`, `uv run mypy`, `uv run pytest`.

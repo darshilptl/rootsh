@@ -5,5 +5,5 @@ Ubuntu. For every proposed action it checks whether the action stays within
 the authority the user granted, traces where each critical argument came
 from, and allows, asks, or blocks — with kernel enforcement underneath.
 
-Status: **P0 complete** (verification spike). Results and author-run checks
-are in `docs/verification/P0.md`; the design is `docs/PLAN.md`.
+Status: **P1 complete** (event model and storage). Phase results are in
+`docs/verification/P0.md` and `docs/summaries/`; the design is `docs/PLAN.md`.

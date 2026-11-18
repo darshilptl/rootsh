@@ -1,0 +1,159 @@
+{
+  "claude_code": {
+    "PostToolUse": {
+      "cwd": "/home/user/project",
+      "duration_ms": 336,
+      "effort": {
+        "level": "medium"
+      },
+      "hook_event_name": "PostToolUse",
+      "permission_mode": "bypassPermissions",
+      "prompt_id": "36850469-8f93-4f2e-88d0-c13df9364607",
+      "scratchpad_dir": "/tmp/claude-scratchpad",
+      "session_id": "b2428f6c-902a-480b-8d61-a2c790145b65",
+      "tool_input": {
+        "command": "touch ./marker",
+        "description": "Create an empty file named marker in the current directory"
+      },
+      "tool_name": "Bash",
+      "tool_response": {
+        "interrupted": false,
+        "isImage": false,
+        "noOutputExpected": true,
+        "stderr": "",
+        "stdout": ""
+      },
+      "tool_use_id": "toolu_01A71398yoEqzTFUM74T7fsZ",
+      "transcript_path": "/home/user/.claude/projects/project/session.jsonl"
+    },
+    "PostToolUseFailure": {
+      "cwd": "/home/user/project",
+      "duration_ms": 336,
+      "effort": {
+        "level": "medium"
+      },
+      "error": "Exit code 2\nls: cannot access './does_not_exist_rootsh': No such file or directory",
+      "hook_event_name": "PostToolUseFailure",
+      "is_interrupt": false,
+      "permission_mode": "bypassPermissions",
+      "prompt_id": "36850469-8f93-4f2e-88d0-c13df9364607",
+      "scratchpad_dir": "/tmp/claude-scratchpad",
+      "session_id": "b2428f6c-902a-480b-8d61-a2c790145b65",
+      "tool_input": {
+        "command": "ls ./does_not_exist_rootsh",
+        "description": "List a nonexistent path once, without retrying"
+      },
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01A71398yoEqzTFUM74T7fsZ",
+      "transcript_path": "/home/user/.claude/projects/project/session.jsonl"
+    },
+    "PreToolUse": {
+      "cwd": "/home/user/project",
+      "effort": {
+        "level": "medium"
+      },
+      "hook_event_name": "PreToolUse",
+      "permission_mode": "bypassPermissions",
+      "prompt_id": "36850469-8f93-4f2e-88d0-c13df9364607",
+      "scratchpad_dir": "/tmp/claude-scratchpad",
+      "session_id": "b2428f6c-902a-480b-8d61-a2c790145b65",
+      "tool_input": {
+        "command": "touch ./marker",
+        "description": "Create an empty file named marker in the current directory"
+      },
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01A71398yoEqzTFUM74T7fsZ",
+      "transcript_path": "/home/user/.claude/projects/project/session.jsonl"
+    },
+    "UserPromptSubmit": {
+      "cwd": "/home/user/project",
+      "hook_event_name": "UserPromptSubmit",
+      "permission_mode": "bypassPermissions",
+      "prompt": "Use the Bash tool to run exactly this command and nothing else: touch ./marker\nDo not use any other tool and do not retry. After the tool call, reply with one word: DONE or FAILED.",
+      "prompt_id": "36850469-8f93-4f2e-88d0-c13df9364607",
+      "scratchpad_dir": "/tmp/claude-scratchpad",
+      "session_id": "b2428f6c-902a-480b-8d61-a2c790145b65",
+      "transcript_path": "/home/user/.claude/projects/project/session.jsonl"
+    }
+  },
+  "opencode": {
+    "session.prompt": {
+      "delivery": "steer",
+      "messageID": "msg_1ed72ad900017v8ZIapgAiPgXv",
+      "prompt": {
+        "files": [],
+        "text": "Use the shell tool to run exactly this command and nothing else: touch ./marker Do not use any other tool and do not retry. After the tool call, reply with one word: DONE or FAILED."
+      },
+      "sessionID": "ses_e128d540effenrOKcX5AhLAyBJ"
+    },
+    "tool.execute.after": {
+      "agent": "build",
+      "id": "call_05835e2692a54c73b6b0dab3",
+      "input": {
+        "command": "touch ./marker"
+      },
+      "messageID": "msg_1ed72ae6c001pidoAELfYgSOFW",
+      "result": {
+        "content": [
+          {
+            "text": "(no output)",
+            "type": "text"
+          }
+        ],
+        "metadata": {
+          "exit": 0,
+          "status": "completed",
+          "truncated": false
+        },
+        "output": {
+          "exitCode": 0,
+          "output": "(no output)",
+          "wallTimeSeconds": 0.002
+        }
+      },
+      "sessionID": "ses_e128d540effenrOKcX5AhLAyBJ",
+      "status": "completed",
+      "tool": "shell"
+    },
+    "tool.execute.after:error": {
+      "agent": "build",
+      "error": {
+        "_tag": "Tool.Error",
+        "error": {
+          "_tag": "Permission.BlockedError",
+          "permission": "shell",
+          "reason": "rootsh p0 probe: deny",
+          "resources": [
+            "touch ./marker"
+          ],
+          "rules": [
+            {
+              "action": "*",
+              "effect": "allow",
+              "resource": "*"
+            }
+          ]
+        },
+        "message": "Unable to execute command: touch ./marker"
+      },
+      "id": "call_a3f1b091171f40338f55a3d4",
+      "input": {
+        "command": "touch ./marker"
+      },
+      "messageID": "msg_1ed72d5ae001DU5iVQKY2gKzlp",
+      "sessionID": "ses_e128d2ca4ffeIiKhPEspvi5glr",
+      "status": "error",
+      "tool": "shell"
+    },
+    "tool.execute.before": {
+      "agent": "build",
+      "id": "call_05835e2692a54c73b6b0dab3",
+      "input": {
+        "command": "touch ./marker"
+      },
+      "messageID": "msg_1ed72ae6c001pidoAELfYgSOFW",
+      "sessionID": "ses_e128d540effenrOKcX5AhLAyBJ",
+      "tool": "shell"
+    }
+  }
+}
