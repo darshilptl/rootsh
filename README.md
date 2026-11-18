@@ -5,7 +5,7 @@ Ubuntu. For every proposed action it checks whether the action stays within
 the authority the user granted, traces where each critical argument came
 from, and allows, asks, or blocks — with kernel enforcement underneath.
 
-Status: **P2 complete** (effect extractor and host-state probes).
+Status: **P3 complete** (provenance engine).
 
 - Plan and build order: `docs/plan.md`
 - Decisions: `docs/decisions/`

@@ -80,6 +80,7 @@ rootsh/
 │   ├── storage/           #   runtime and research SQLite databases, migrations
 │   ├── effects/           #   what an action would do (tree-sitter-bash)
 │   ├── hoststate/         #   read-only facts about the paths it touches
+│   ├── provenance/        #   where each critical argument came from
 │   └── cli/               #   `rootsh` command line
 ├── tests/                 # mirrors src/rootsh/; shared helpers in tests/support/
 │   └── fixtures/          #   real (sanitized) payloads, hand-labelled corpora
@@ -91,6 +92,7 @@ rootsh/
 ├── research/              # experiments and the scripts behind reported numbers
 │   ├── p0-verification/   #   P0 probes (kept as run)
 │   ├── robustness/        #   NL2Bash robustness gate
+│   ├── p3-transcripts/    #   safe recorders for real agent transcripts
 │   └── old-audit/         #   scripts reproducing the researchwork audit (kept as run)
 ├── plugins/opencode/      # TypeScript OpenCode plugin (from P8)
 └── data/                  # local corpora and runtime files, git-ignored

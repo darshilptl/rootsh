@@ -270,3 +270,11 @@ def test_dpkg_reads_only_package_files(command: str, reads: list[str]) -> None:
 def test_listening_sockets_are_network_effects(command: str, target: str) -> None:
     (effect,) = analyze(command).effects
     assert (effect.kind, effect.target, effect.detail) == (EffectKind.NETWORK, target, "listen")
+
+
+def test_opencode_shell_workdir_sets_the_working_directory() -> None:
+    # Recorded in P3: OpenCode's shell tool input carries `workdir`.
+    analysis = analyze_event(
+        _event(Tool.SHELL, "shell", {"command": "rm -rf build", "workdir": "/srv"}), CTX
+    )
+    assert [e.target for e in analysis.effects] == ["/srv/build"]

@@ -82,6 +82,8 @@ def test_claude_post_tool_use_failure_reads_error() -> None:
         ({"stdout": "out", "stderr": "err"}, "out\nerr"),
         ({"stderr": "err"}, "\nerr"),
         ({"filePath": "/w/a", "type": "create"}, '{"filePath":"/w/a","type":"create"}'),
+        # Read, as recorded in P3: the text is the file's content, not the JSON
+        ({"type": "text", "file": {"filePath": "/w/R.md", "content": "line"}}, "line"),
     ],
 )
 def test_claude_response_text(response: object, expected: str) -> None:

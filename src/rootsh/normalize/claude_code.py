@@ -57,6 +57,10 @@ def response_text(response: object) -> str:
         if not isinstance(stdout, str) or not isinstance(stderr, str):
             raise EventParseError("tool_response stdout/stderr must be strings")
         return f"{stdout}\n{stderr}" if stderr else stdout
+    if isinstance(response, Mapping) and isinstance(response.get("file"), Mapping):
+        content = response["file"].get("content")  # Read: {"type", "file": {"filePath", "content"}}
+        if isinstance(content, str):
+            return content
     return canonical_json(response)
 
 

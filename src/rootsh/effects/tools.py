@@ -34,7 +34,13 @@ def _opaque(tool_raw: str) -> Analysis:
 def analyze_tool(tool: Tool, tool_raw: str, args: Mapping[str, JSON], ctx: Context) -> Analysis:
     if tool is Tool.SHELL:
         command = args.get("command")
-        return analyze_shell(command, ctx) if isinstance(command, str) else _opaque(tool_raw)
+        if not isinstance(command, str):
+            return _opaque(tool_raw)
+        workdir = args.get("workdir")  # OpenCode's shell tool runs in this directory
+        if isinstance(workdir, str) and workdir:
+            target = resolve(Word(workdir), ctx)
+            ctx = ctx.with_cwd(None if target.dynamic else target.path)
+        return analyze_shell(command, ctx)
     if tool is Tool.FETCH and tool_raw == "WebFetch":
         url = args.get("url")
         if not isinstance(url, str) or not url:
