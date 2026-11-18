@@ -1,0 +1,22 @@
+{
+  "abi": 8,
+  "filesystem": {
+    "write_allowed_dir": "ok",
+    "write_protected_dir": "EACCES",
+    "unlink_protected": "EACCES",
+    "rename_out_of_protected": "EACCES",
+    "truncate_protected": "EACCES",
+    "read_protected": "ok",
+    "read_unlisted_secret": "EACCES",
+    "child_exec_write_protected": "exit 1: t/rootsh/spikes/p0/kernel/out/landlock_fs/protected/via_exec': Permission denied",
+    "protected_files_intact": "True"
+  },
+  "network": {
+    "connect_allowed_port": "ok",
+    "connect_denied_port": "EACCES"
+  },
+  "signal_scope": {
+    "signal_parent_before": "ok",
+    "signal_parent_after_scope": "EPERM"
+  }
+}

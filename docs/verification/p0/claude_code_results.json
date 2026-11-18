@@ -1,0 +1,227 @@
+[
+  {
+    "case": "control_record_bypass",
+    "hook_mode": "record",
+    "permission_mode": "bypassPermissions",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": true,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1,
+      "PostToolUse": 1
+    },
+    "permission_denials": 0,
+    "result": "DONE",
+    "cost_usd": 0.0030749199999999997,
+    "elapsed_s": 6.1
+  },
+  {
+    "case": "deny_json_bypass",
+    "hook_mode": "deny",
+    "permission_mode": "bypassPermissions",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.0027055200000000003,
+    "elapsed_s": 8.8
+  },
+  {
+    "case": "deny_exit2_bypass",
+    "hook_mode": "exit2",
+    "permission_mode": "bypassPermissions",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.0027097700000000002,
+    "elapsed_s": 9.0
+  },
+  {
+    "case": "ask_bypass",
+    "hook_mode": "ask",
+    "permission_mode": "bypassPermissions",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.00274241,
+    "elapsed_s": 7.7
+  },
+  {
+    "case": "ask_default",
+    "hook_mode": "ask",
+    "permission_mode": "default",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.00270854,
+    "elapsed_s": 6.7
+  },
+  {
+    "case": "ask_auto",
+    "hook_mode": "ask",
+    "permission_mode": "auto",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.00270996,
+    "elapsed_s": 8.5
+  },
+  {
+    "case": "record_default",
+    "hook_mode": "record",
+    "permission_mode": "default",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.00270744,
+    "elapsed_s": 10.1
+  },
+  {
+    "case": "allow_default",
+    "hook_mode": "allow",
+    "permission_mode": "default",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": true,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1,
+      "PostToolUse": 1
+    },
+    "permission_denials": 0,
+    "result": "DONE",
+    "cost_usd": 0.00266694,
+    "elapsed_s": 6.3
+  },
+  {
+    "case": "crash_exit1_bypass",
+    "hook_mode": "exit1",
+    "permission_mode": "bypassPermissions",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": true,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1,
+      "PostToolUse": 1
+    },
+    "permission_denials": 0,
+    "result": "DONE",
+    "cost_usd": 0.00263125,
+    "elapsed_s": 6.0
+  },
+  {
+    "case": "crash_exit1_onfailure_block_bypass",
+    "hook_mode": "exit1",
+    "permission_mode": "bypassPermissions",
+    "tool": "Bash",
+    "on_failure_block": true,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.0027002900000000006,
+    "elapsed_s": 9.9
+  },
+  {
+    "case": "timeout_bypass",
+    "hook_mode": "sleep",
+    "permission_mode": "bypassPermissions",
+    "tool": "Bash",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": true,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1,
+      "PostToolUse": 1
+    },
+    "permission_denials": 0,
+    "result": "DONE",
+    "cost_usd": 0.0026281,
+    "elapsed_s": 8.5
+  },
+  {
+    "case": "timeout_onfailure_block_bypass",
+    "hook_mode": "sleep",
+    "permission_mode": "bypassPermissions",
+    "tool": "Bash",
+    "on_failure_block": true,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.0027306500000000003,
+    "elapsed_s": 11.1
+  },
+  {
+    "case": "deny_write_tool_bypass",
+    "hook_mode": "deny",
+    "permission_mode": "bypassPermissions",
+    "tool": "Write",
+    "on_failure_block": false,
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "UserPromptSubmit": 1,
+      "PreToolUse": 1
+    },
+    "permission_denials": 1,
+    "result": "FAILED",
+    "cost_usd": 0.0036556900000000005,
+    "elapsed_s": 7.1
+  }
+]

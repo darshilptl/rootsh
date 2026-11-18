@@ -1,0 +1,5 @@
+{
+  "check": "notify",
+  "raw": "{\"id\": 7, \"action\": \"allow\", \"closed\": \"dismissed\", \"signals\": [\"ActivationToken\", \"ActionInvoked\", \"NotificationClosed\"], \"elapsed_s\": 2.0}",
+  "expected_action": "allow"
+}

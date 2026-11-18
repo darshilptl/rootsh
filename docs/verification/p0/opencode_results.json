@@ -1,0 +1,253 @@
+[
+  {
+    "case": "control_record_auto",
+    "mode": "record",
+    "auto": true,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": true,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1,
+      "shell.create.before": 1,
+      "permission.evaluate": 1,
+      "tool.execute.after": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "completed",
+        "error": ""
+      }
+    ],
+    "elapsed_s": 4.9
+  },
+  {
+    "case": "record_no_auto",
+    "mode": "record",
+    "auto": false,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": true,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1,
+      "shell.create.before": 1,
+      "permission.evaluate": 1,
+      "tool.execute.after": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "completed",
+        "error": ""
+      }
+    ],
+    "elapsed_s": 5.2
+  },
+  {
+    "case": "deny_evaluate_auto",
+    "mode": "deny",
+    "auto": true,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1,
+      "shell.create.before": 1,
+      "permission.evaluate": 1,
+      "tool.execute.after": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "error",
+        "error": "rootsh p0 probe: deny"
+      }
+    ],
+    "elapsed_s": 4.3
+  },
+  {
+    "case": "ask_evaluate_auto",
+    "mode": "ask",
+    "auto": true,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": true,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1,
+      "shell.create.before": 1,
+      "permission.evaluate": 1,
+      "tool.execute.after": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "completed",
+        "error": ""
+      }
+    ],
+    "elapsed_s": 5.7
+  },
+  {
+    "case": "ask_evaluate_no_auto",
+    "mode": "ask",
+    "auto": false,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1,
+      "shell.create.before": 1,
+      "permission.evaluate": 1,
+      "tool.execute.after": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "error",
+        "error": "This non-interactive run cannot ask the user for permission, so the request was rejected. Continue without this action."
+      }
+    ],
+    "elapsed_s": 4.8
+  },
+  {
+    "case": "throw_execute_before_auto",
+    "mode": "throw",
+    "auto": true,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "error",
+        "error": "rootsh p0 probe: blocked by throw"
+      }
+    ],
+    "elapsed_s": 5.4
+  },
+  {
+    "case": "throw_shell_create_auto",
+    "mode": "shell-throw",
+    "auto": true,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1,
+      "shell.create.before": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "error",
+        "error": "rootsh p0 probe: shell blocked by throw"
+      }
+    ],
+    "elapsed_s": 5.2
+  },
+  {
+    "case": "setup_throw_auto",
+    "mode": "setup-throw",
+    "auto": true,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": true,
+    "hook_events": {
+      "plugin.setup": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "completed",
+        "error": ""
+      }
+    ],
+    "elapsed_s": 5.4
+  },
+  {
+    "case": "throw_execute_before_write_auto",
+    "mode": "throw",
+    "auto": true,
+    "tool": "write",
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "write",
+        "status": "error",
+        "error": "rootsh p0 probe: blocked by throw"
+      }
+    ],
+    "elapsed_s": 6.4
+  },
+  {
+    "case": "deny_evaluate_write_auto",
+    "mode": "deny",
+    "auto": true,
+    "tool": "write",
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1,
+      "permission.evaluate": 1,
+      "tool.execute.after": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "write",
+        "status": "error",
+        "error": "rootsh p0 probe: deny"
+      }
+    ],
+    "elapsed_s": 6.2
+  },
+  {
+    "case": "slow_deny_evaluate_auto",
+    "mode": "slow-deny",
+    "auto": true,
+    "tool": "shell",
+    "exit_code": 0,
+    "marker_exists": false,
+    "hook_events": {
+      "plugin.setup": 1,
+      "session.prompt": 1,
+      "tool.execute.before": 1,
+      "shell.create.before": 1,
+      "permission.evaluate": 1,
+      "permission.evaluate.decided": 1,
+      "tool.execute.after": 1
+    },
+    "tool_outcomes": [
+      {
+        "tool": "shell",
+        "status": "error",
+        "error": "rootsh p0 probe: slow deny"
+      }
+    ],
+    "elapsed_s": 27.2
+  }
+]

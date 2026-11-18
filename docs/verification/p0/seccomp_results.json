@@ -1,0 +1,16 @@
+{
+  "denied_syscalls": {
+    "ptrace": 101,
+    "mount": 165,
+    "keyctl": 250,
+    "bpf": 321
+  },
+  "control_no_filter": {
+    "ptrace_traceme": "ok"
+  },
+  "with_filter": {
+    "ptrace_traceme": "EPERM",
+    "ordinary_file_io": "ok",
+    "ptrace_after_exec": "EPERM"
+  }
+}

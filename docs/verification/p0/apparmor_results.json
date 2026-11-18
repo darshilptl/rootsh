@@ -1,0 +1,12 @@
+{
+  "check": "apparmor",
+  "profile_loaded": "yes",
+  "confined_write_allowed": "ok",
+  "confined_write_protected": "denied",
+  "confined_unlink_protected": "denied",
+  "confined_signal0_unconfined_process": "ok",
+  "confined_sigcont_unconfined_process": "denied",
+  "unconfined_write_protected": "ok",
+  "unconfined_sigcont": "ok",
+  "protected_file_intact": "yes"
+}

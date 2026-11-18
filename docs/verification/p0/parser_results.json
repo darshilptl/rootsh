@@ -1,0 +1,56 @@
+{
+  "tree_sitter_bash": {
+    "correct": 30,
+    "total": 32,
+    "mean_parse_ms": 0.02,
+    "misses": [
+      {
+        "cmd": "if [ -f x ]; then rm x; fi",
+        "ok": true,
+        "commands": [
+          "rm"
+        ],
+        "redirects": []
+      },
+      {
+        "cmd": "time make -j8",
+        "ok": true,
+        "commands": [
+          "time"
+        ],
+        "redirects": []
+      }
+    ]
+  },
+  "bashlex": {
+    "correct": 28,
+    "total": 32,
+    "mean_parse_ms": 0.163,
+    "misses": [
+      {
+        "cmd": "x=$((1+2)); echo $x",
+        "ok": false,
+        "commands": [],
+        "redirects": []
+      },
+      {
+        "cmd": "case \"$1\" in start) run ;; stop) halt ;; esac",
+        "ok": false,
+        "commands": [],
+        "redirects": []
+      },
+      {
+        "cmd": "[[ -d .git ]] && git status",
+        "ok": false,
+        "commands": [],
+        "redirects": []
+      },
+      {
+        "cmd": "time make -j8",
+        "ok": false,
+        "commands": [],
+        "redirects": []
+      }
+    ]
+  }
+}

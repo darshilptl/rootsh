@@ -1,0 +1,5 @@
+{
+  "check": "claude_ask",
+  "prompt_appeared": "y",
+  "marker_created_after_yes": "yes"
+}

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node (OpenCode plugin)
+node_modules/
+
+# Runtime and research artifacts
+*.db
+*.db-*
+*.sqlite
+*.lgb
+*.pkl
+traces/
+.env*
+
+# Spike scratch output
+spikes/**/out/

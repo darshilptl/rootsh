@@ -1,0 +1,7 @@
+{
+  "check": "managed_settings",
+  "path": "/etc/claude-code/managed-settings.json",
+  "mode": "644",
+  "claude_exit": "0",
+  "managed_hook_fired_despite_user_disableAllHooks": "yes"
+}

@@ -1,0 +1,10 @@
+{
+  "check": "bpf_lsm",
+  "status": "ran",
+  "unlink_target_as_user_while_loaded": "denied",
+  "unlink_target_as_root_while_loaded": "denied",
+  "unlink_name_with_target_prefix_while_loaded": "ok",
+  "unlink_other_while_loaded": "ok",
+  "unpin": "ok",
+  "unlink_target_after_unload": "ok"
+}
