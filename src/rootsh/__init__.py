@@ -1,3 +1,6 @@
 """Rootsh: a defense layer for host-level coding agents."""
 
-__version__ = "0.1.0"
+from importlib.metadata import version
+
+# pyproject.toml is the single source of truth for the version.
+__version__ = version("rootsh")

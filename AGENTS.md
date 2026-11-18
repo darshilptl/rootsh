@@ -3,8 +3,8 @@
 Rootsh is an M.Tech research project: a defense layer that decides, for every
 action a host-level coding agent proposes, whether that action stays within the
 authority the user granted, and stops it before irreversible harm when it does
-not. The full design is `docs/PLAN.md`; recorded decisions are
-`docs/decisions.md`.
+not. The full design is `docs/plan.md`; recorded decisions are
+`docs/decisions/`.
 
 ## 1. Scope
 
@@ -45,13 +45,16 @@ not. The full design is `docs/PLAN.md`; recorded decisions are
 
 ## 4. Phase process
 
-Phases and gates are in `docs/PLAN.md` (build order table).
+Phases and gates are in `docs/plan.md` (build order table).
 
-1. **Docs first.** Write `docs/modules/NN-name.md` (flows, interfaces, edge
-   cases, acceptance criteria) before code. Self-audit against it.
+1. **Docs first.** Write `docs/design/NN-name.md` (flows, interfaces, edge
+   cases, acceptance criteria) before code. Self-audit against it, and record
+   results in `docs/results/NN-name.md`, every number from a run.
 2. **Branch per phase.** Never work on `main`.
 3. **Complete before next.** Gate passes with real output before merging.
-4. **Squash merge, delete branch.** Tag `v0.N.0` after phase N merges.
+4. **Squash merge, delete branch.** The phase's last commit sets
+   `version = "0.N.0"` in `pyproject.toml` (the only place the version
+   lives); tag `v0.N.0` after phase N merges.
 
 ## 5. Git workflow (trunk-based)
 
@@ -70,17 +73,27 @@ Phases and gates are in `docs/PLAN.md` (build order table).
 
 ```
 rootsh/
-├── AGENTS.md
-├── README.md
+├── AGENTS.md  README.md  pyproject.toml  uv.lock
+├── src/rootsh/            # the package: one folder per subsystem
+│   ├── events/            #   normalized AgentEvent
+│   ├── normalize/         #   hook payloads -> AgentEvent (Claude Code, OpenCode)
+│   ├── storage/           #   runtime and research SQLite databases, migrations
+│   ├── effects/           #   what an action would do (tree-sitter-bash)
+│   ├── hoststate/         #   read-only facts about the paths it touches
+│   └── cli/               #   `rootsh` command line
+├── tests/                 # mirrors src/rootsh/; shared helpers in tests/support/
+│   └── fixtures/          #   real (sanitized) payloads, hand-labelled corpora
 ├── docs/
-│   ├── PLAN.md            # audit + design + build order
-│   ├── decisions.md       # recorded decisions
-│   ├── verification/      # P0 verification log
-│   ├── modules/           # one design doc per phase, written before code
-│   └── summaries/         # one results doc per phase, numbers from runs
-├── src/rootsh/            # the package
-├── tests/                 # pytest; db_guard.py keeps tests off real DBs
-└── spikes/                # P0 throwaway probes, kept for reproducibility
+│   ├── plan.md            # audit + design + build order
+│   ├── decisions/         # numbered decision records (ADR-NNNN)
+│   ├── design/            # NN-name.md: one design doc per phase, written before code
+│   └── results/           # NN-name.md: one results doc per phase; raw data in data/
+├── research/              # experiments and the scripts behind reported numbers
+│   ├── p0-verification/   #   P0 probes (kept as run)
+│   ├── robustness/        #   NL2Bash robustness gate
+│   └── old-audit/         #   scripts reproducing the researchwork audit (kept as run)
+├── plugins/opencode/      # TypeScript OpenCode plugin (from P8)
+└── data/                  # local corpora and runtime files, git-ignored
 ```
 
 Checks (all must pass before a merge): `uv run ruff check`,

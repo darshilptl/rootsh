@@ -1,16 +1,16 @@
 # P0 — Verification log
 
 Every claim here is tagged `[RUN]` (measured on this host, raw data in
-`docs/verification/p0/` and reproducible from `spikes/p0/`), `[DOC]` (official
+`docs/results/data/p0/` and reproducible from `research/p0-verification/`), `[DOC]` (official
 documentation), or `[RUN, author-run]` (measured on this host by the author,
-because it needed sudo or a click; `spikes/p0/user_checks/run.sh`).
+because it needed sudo or a click; `research/p0-verification/user_checks/run.sh`).
 
 **Host:** Ubuntu 26.04.1 LTS, kernel 7.0.0-43-generic, Claude Code 2.1.325,
 OpenCode v2.3.0, Python 3.14.4 (system), uv available, no passwordless sudo.
 
 ## Gate status
 
-P0 gate (PLAN.md): measured proof for each item, written to this log.
+P0 gate (plan.md): measured proof for each item, written to this log.
 
 | Item | Status |
 |---|---|
@@ -32,7 +32,7 @@ checks in §6 are recorded with their raw results.
 
 ## Consequences for the design
 
-What P0 changes or pins down in `PLAN.md`:
+What P0 changes or pins down in `plan.md`:
 
 1. **Rootsh never answers `allow` to Claude Code.** A hook `allow` bypasses
    Claude Code's own permission rules [RUN]; a clean action gets no decision.
@@ -69,7 +69,7 @@ these.
 
 ## 1. Claude Code hooks
 
-**Method.** `spikes/p0/claude_code/run_probes.py` runs one fresh
+**Method.** `research/p0-verification/claude_code/run_probes.py` runs one fresh
 `claude -p --model haiku` session per case, in its own workspace, with hooks
 passed via `--settings`. A probe hook (`hook_probe.py`) logs its stdin event and
 answers in the case's mode. The model is asked to create `./marker`; the marker
@@ -113,12 +113,12 @@ cost $0.0364 [RUN].
    permission prompt, and the command runs after the user says yes**
    (author-run `./run.sh claude-ask`: prompt appeared, marker created)
    [RUN]. The run first stops at Claude Code's folder-trust question for a
-   new directory. Raw: `docs/verification/p0/claude_ask_results.json`.
+   new directory. Raw: `docs/results/data/p0/claude_ask_results.json`.
    → In headless runs the desktop channel carries the decision (§5).
 5. **`PostToolUse` does not fire for a failed tool call;
    `PostToolUseFailure` does** [RUN] (first control run, where the model
    mis-quoted a path containing a space). Both are needed for provenance.
-6. **Field sets** [RUN] (`p0/` → `spikes/p0/claude_code/out/schema.json`):
+6. **Field sets** [RUN] (`p0/` → `research/p0-verification/claude_code/out/schema.json`):
    - all three events: `session_id`, `prompt_id`, `transcript_path`, `cwd`,
      `permission_mode`, `scratchpad_dir`, `hook_event_name`
    - `UserPromptSubmit`: + `prompt`
@@ -144,13 +144,13 @@ cost $0.0364 [RUN].
    check looks for its own `echo rootsh-p0` command in the hook log). So a
    user- or session-level setting cannot switch Rootsh's managed hooks off.
    The file and the `/etc/claude-code` directory it created were removed
-   afterwards (verified). Raw: `docs/verification/p0/managed_settings_results.json`.
+   afterwards (verified). Raw: `docs/results/data/p0/managed_settings_results.json`.
 
 ---
 
 ## 2. OpenCode v2.3.0 plugin API
 
-**Method.** `spikes/p0/opencode/run_probes.py` runs one
+**Method.** `research/p0-verification/opencode/run_probes.py` runs one
 `opencode run --standalone --format json` per case (a private server, so the
 project-local plugin loads fresh) with `opencode/deepseek-v4.1-flash-free`
 (cost $0). The probe plugin (`probe-plugin/index.ts`, V2 API,
@@ -200,7 +200,7 @@ case proves the harness. 11 cases [RUN].
    timing out [RUN].
 5. **OpenCode's default lets `shell` run without asking** (`record_no_auto`)
    [RUN]. Rootsh is the only gate on a stock install.
-6. **Event fields** [RUN] (`spikes/p0/opencode/out/schema.json`):
+6. **Event fields** [RUN] (`research/p0-verification/opencode/out/schema.json`):
    - `session.prompt`: `sessionID`, `messageID`, `prompt.text`, `prompt.files`,
      `delivery` — the user's request, for the intent capsule
    - `tool.execute.before`: `tool`, `input` (e.g. `input.command`), `id`,
@@ -238,7 +238,7 @@ case proves the harness. 11 cases [RUN].
 | Unprivileged BPF | disabled (`unprivileged_bpf_disabled = 2`) |
 | BPF toolchain | `bpftool` present; **`clang` and `libbpf-dev` headers absent** |
 
-### 3.2 Landlock (K1) — `spikes/p0/kernel/landlock_probe.py` [RUN]
+### 3.2 Landlock (K1) — `research/p0-verification/kernel/landlock_probe.py` [RUN]
 
 Unprivileged, via raw syscalls (no dependency). **ABI version 8.** Each check
 runs in a forked child that enforces its own domain.
@@ -259,7 +259,7 @@ unreadable, restrict TCP ports, and stop the agent from signalling (killing)
 the daemon. Landlock rules only *allow*, so "deny this subtree inside an
 allowed tree" (e.g. `.git/hooks`) needs AppArmor (K2).
 
-### 3.3 seccomp (K3) — `spikes/p0/kernel/seccomp_probe.py` [RUN]
+### 3.3 seccomp (K3) — `research/p0-verification/kernel/seccomp_probe.py` [RUN]
 
 A hand-built BPF filter (arch check, x32 refused, deny-list of `ptrace`,
 `mount`, `keyctl`, `bpf` → EPERM, everything else allowed), loaded
@@ -278,9 +278,9 @@ agent sessions.
 
 ### 3.4 AppArmor (K2) — `sudo ./run.sh apparmor` [RUN, author-run]
 
-Profile `spikes/p0/user_checks/apparmor/rootsh-p0-probe.profile`, loaded with
+Profile `research/p0-verification/user_checks/apparmor/rootsh-p0-probe.profile`, loaded with
 `apparmor_parser -r`, entered with `aa-exec`, unloaded afterwards. Raw result:
-`docs/verification/p0/apparmor_results.json`.
+`docs/results/data/p0/apparmor_results.json`.
 
 | Check | Confined | Control (no rootsh profile) |
 |---|---|---|
@@ -316,10 +316,10 @@ Findings:
 `sudo ./run.sh bpf-lsm` [RUN, author-run]. Toolchain: `clang` 21.1.8 and
 `libbpf-dev` 1.6.3, installed with `--no-install-recommends` (10 packages,
 25.1 MB; `libllvm21` and `libclang-cpp21` were already present). These are
-system packages, not Python. Program: `spikes/p0/user_checks/bpf_lsm/deny_unlink.bpf.c`
+system packages, not Python. Program: `research/p0-verification/user_checks/bpf_lsm/deny_unlink.bpf.c`
 (`lsm/inode_unlink`, denies unlinking one exact file name), built against the
 running kernel's BTF and loaded with `bpftool prog loadall … autoattach`. Raw:
-`docs/verification/p0/bpf_lsm_results.json`.
+`docs/results/data/p0/bpf_lsm_results.json`.
 
 | Check (while loaded) | Result |
 |---|---|
@@ -358,20 +358,20 @@ on shutdown.
 
 ## 4. Bash parser for the effect extractor (P2)
 
-**Method.** `spikes/p0/parser/parser_bench.py` over `corpus.json`: 32
+**Method.** `research/p0-verification/parser/parser_bench.py` over `corpus.json`: 32
 hand-labelled commands (pipelines, `&&`, substitutions, process substitution,
 heredoc, loops, `case`, functions, `[[ ]]`, arithmetic, escapes, line
 continuation, one malformed command). Expected output = bash semantics: the
 simple commands that would run, and the file-redirection targets. Labels were
 fixed before the first run and not changed after. Python 3.12.15, pinned in
-`spikes/p0/parser/requirements.txt`.
+`research/p0-verification/parser/requirements.txt`.
 
 | Parser | License | Correct | Mean parse | Misses |
 |---|---|---|---|---|
 | **tree-sitter-bash 0.25.1** (tree-sitter 0.26.1) | MIT | **30/32** | 0.02 ms | `[ -f x ]` is a `test_command` node, not a command named `[` (no effect either way); `time make` reports `time` (a bash keyword) as the command |
 | bashlex 0.18 | **GPLv3+** | 28/32 | 0.163 ms | fails to parse `$((…))`, `case`, `[[ ]]`, `time` |
 
-[RUN] — `docs/verification/p0/parser_results.json`. One tree-sitter miss in the
+[RUN] — `docs/results/data/p0/parser_results.json`. One tree-sitter miss in the
 first run was a bug in the benchmark's own redirect extractor (`2>&1` read as
 a file named `1`); the extractor was fixed and the corpus left unchanged.
 
@@ -397,7 +397,7 @@ top of it:
 | Notification server (`GetServerInformation`) | `gnome-shell` GNOME 50.1, spec 1.2, Wayland session [RUN] |
 | Server capabilities (`GetCapabilities`) | `actions, body, body-markup, icon-static, persistence, sound` [RUN] |
 | `notify-send 0.8.8 -A block=Block -A allow=Allow …` | **refused**: "Actions are not supported by this notifications server. Displaying non-interactively.", exit 1 [RUN] |
-| Direct D-Bus `Notify` with actions (`spikes/p0/notify/dbus_notify_probe.py`), 4 s, no click | accepted (id returned), closed by our timeout, `action = null` [RUN] |
+| Direct D-Bus `Notify` with actions (`research/p0-verification/notify/dbus_notify_probe.py`), 4 s, no click | accepted (id returned), closed by our timeout, `action = null` [RUN] |
 | Clicking a button delivers `ActionInvoked` | ✅ author clicked Allow: `action = "allow"`, signals `ActivationToken` → `ActionInvoked` → `NotificationClosed`, 2.0 s [RUN, author-run] |
 
 → The `notify-send` CLI cannot carry the decision on this host, even though
@@ -411,14 +411,14 @@ The first author run returned no action: spec-1.2 servers emit
 `ActivationToken` before `ActionInvoked`, and the probe stopped on the first
 signal for its notification. The probe now waits for `ActionInvoked` or
 `NotificationClosed` only. `rootsh-notifier` must do the same. Raw:
-`docs/verification/p0/notify_results.json`.
+`docs/results/data/p0/notify_results.json`.
 
 ---
 
-## 6. Checks that need the author — `spikes/p0/user_checks/run.sh`
+## 6. Checks that need the author — `research/p0-verification/user_checks/run.sh`
 
 No passwordless sudo on this host, and two checks need a human click. Each
-check cleans up after itself and writes `spikes/p0/user_checks/out/<check>.json`.
+check cleans up after itself and writes `research/p0-verification/user_checks/out/<check>.json`.
 
 | Command | Verifies | Status |
 |---|---|---|
@@ -442,7 +442,7 @@ checking, and removed.
    user named — and is kept as a candidate hallucination trace for P4.
 2. **OpenCode** [RUN]: the first run used the process cwd instead of `$PWD`
    (§2 finding 7), so two marker files (one empty, one containing `x`) were
-   written into `spikes/p0/opencode/`.
+   written into `research/p0-verification/opencode/`.
 3. **BPF-LSM** [RUN]: the first author run left its program attached
    (§3.5), so files named `rootsh_p0_deny…` could not be deleted. While
    confirming that it was still active, two more test files were created

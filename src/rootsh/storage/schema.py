@@ -12,7 +12,7 @@ from rootsh.storage.db import DatabaseKind
 from rootsh.storage.migrations import Migration, check_sequence
 
 # Enum value lists are literal on purpose: migration text must never change
-# when a Python enum does. tests/test_storage.py checks they stay in sync.
+# when a Python enum does. tests/storage/test_storage.py checks they stay in sync.
 _EVENT_COLUMNS = """
     kind         TEXT NOT NULL CHECK (kind IN ('prompt', 'tool_pre', 'tool_post', 'tool_failure')),
     turn_id      TEXT,

@@ -5,17 +5,17 @@ from __future__ import annotations
 import copy
 import json
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 import pytest
 
 from rootsh.events import MAX_TEXT_CHARS, Agent, EventKind, EventParseError, Tool, payload_digest
 from rootsh.normalize import claude_code, normalize, opencode
+from support import FIXTURES_DIR
 
 NOW = datetime(2026, 11, 18, 12, 0, tzinfo=UTC)
 FIXTURES: dict[str, dict[str, dict[str, Any]]] = json.loads(
-    (Path(__file__).parent / "fixtures" / "hook_payloads.json").read_text(encoding="utf-8")
+    (FIXTURES_DIR / "hook_payloads.json").read_text(encoding="utf-8")
 )
 
 

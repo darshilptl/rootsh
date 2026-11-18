@@ -19,5 +19,8 @@ node_modules/
 traces/
 .env*
 
-# Spike scratch output
-spikes/**/out/
+# Raw output of research probes
+research/**/out/
+
+# Third-party corpora: downloaded locally, never committed
+data/external/

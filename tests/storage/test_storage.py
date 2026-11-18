@@ -17,16 +17,18 @@ from rootsh.storage.events_store import ingest
 from rootsh.storage.migrations import (
     Migration,
     MigrationError,
+    _apply,
     check_sequence,
     migrate,
     split_statements,
     status,
 )
 from rootsh.storage.schema import MIGRATIONS, RESEARCH, RUNTIME
+from support import FIXTURES_DIR
 
 NOW = datetime(2026, 11, 18, 12, 0, tzinfo=UTC)
 FIXTURES: dict[str, dict[str, dict[str, Any]]] = json.loads(
-    (Path(__file__).parent / "fixtures" / "hook_payloads.json").read_text(encoding="utf-8")
+    (FIXTURES_DIR / "hook_payloads.json").read_text(encoding="utf-8")
 )
 
 
@@ -251,3 +253,10 @@ def test_heldout_is_evaluated_once_per_model_and_dataset(research_db: sqlite3.Co
     add_run(research_db, "r4", "heldout", model="m2")
     with pytest.raises(sqlite3.IntegrityError, match="UNIQUE"):
         add_run(research_db, "r5", "heldout")
+
+
+def test_a_migration_applied_by_another_process_is_skipped(runtime_db: sqlite3.Connection) -> None:
+    # migrate() re-reads the ledger under the write lock; a version applied by a
+    # concurrent migrator is skipped instead of failing on "table exists".
+    assert _apply(runtime_db, RUNTIME[0]) is False
+    assert status(runtime_db, RUNTIME).applied == (1,)

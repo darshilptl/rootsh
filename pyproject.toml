@@ -1,10 +1,14 @@
 [project]
 name = "rootsh"
-version = "0.1.0"
+version = "0.2.0"
 description = "Defense layer for host-level coding agents (Claude Code, OpenCode)"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pygit2>=1.21.0",
+    "tree-sitter==0.26.1",
+    "tree-sitter-bash==0.25.1",
+]
 
 [project.scripts]
 rootsh = "rootsh.cli:main"
@@ -24,21 +28,24 @@ build-backend = "uv_build"
 line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
-extend-exclude = ["spikes", "docs"]  # probes and audit scripts are kept as run
+extend-exclude = ["docs", "research/p0-verification", "research/old-audit"]  # kept as run
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "C4", "RET", "N", "S", "BLE"]
 ignore = ["S101"]  # assert is the pytest idiom
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S105", "S106"]  # literal fixture values are not secrets
+"tests/**" = ["S105", "S106", "S311"]  # fixture literals; seeded fuzzing, not cryptography
 
 [tool.mypy]
 strict = true
-files = ["src", "tests"]
+files = ["src", "tests", "research/robustness"]
 python_version = "3.12"
+mypy_path = "src:tests"
+explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["-ra", "--strict-markers", "--strict-config"]
+pythonpath = ["tests"]  # makes tests/support importable as `support`
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
 xfail_strict = true

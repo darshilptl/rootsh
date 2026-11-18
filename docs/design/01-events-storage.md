@@ -1,7 +1,7 @@
 # 01 — Event model and storage
 
 **Phase:** P1 · **Branch:** `feature/p1-events-storage`
-**Gate (PLAN.md):** migrations run; a test writing to a non-temporary database
+**Gate (plan.md):** migrations run; a test writing to a non-temporary database
 fails.
 
 ## 1. Scope
@@ -234,7 +234,7 @@ one `BEGIN IMMEDIATE` transaction:
 a wrapper. The wrapper allows only `":memory:"` and paths that resolve inside
 pytest's base temp directory; anything else (including `file:` URIs and
 symlinks resolving outside) raises **`DatabaseGuardError`** (in the test-only
-module `tests/db_guard.py`; pytest would collect a class named `Test…`) before
+module `tests/support/db_guard.py`; pytest would collect a class named `Test…`) before
 a file is opened. Production code has no knowledge of tests: the guard wraps the one
 function every SQLite access goes through.
 
@@ -272,7 +272,7 @@ stderr) · `2` usage error.
 
 1. `rootsh db migrate` creates both DBs from nothing; a second run applies
    nothing; `rootsh db status` reports them clean. Real output recorded in
-   `docs/summaries/01-events-storage.md`.
+   `docs/results/01-events-storage.md`.
 2. A test that opens a database outside the temp directory fails with
    `DatabaseGuardError`.
 3. The tampered-migration, newer-DB and wrong-kind cases each raise and leave

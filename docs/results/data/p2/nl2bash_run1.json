@@ -1,0 +1,72 @@
+{
+  "corpus": {
+    "file": "NL2Bash all.cm",
+    "sha256": "3a72eaced7fa14a0938354cefc42b2dcafb2d47297102f1279086e18c3abe57e",
+    "commands": 12607
+  },
+  "crashes": 0,
+  "crash_types": {},
+  "parse_errors": 106,
+  "parse_errors_not_reported_opaque": 0,
+  "fully_analysed": 10724,
+  "opaque": 1883,
+  "opaque_rate": 0.1494,
+  "commands_by_opaque_reason": {
+    "unknown_program": 1248,
+    "interpreter_code": 236,
+    "remote_exec": 120,
+    "script_exec": 119,
+    "parse_error": 106,
+    "stdin_code": 61,
+    "dynamic_command": 54,
+    "source": 26,
+    "package_install": 17,
+    "eval": 3
+  },
+  "top_unknown_programs": {
+    "split": 122,
+    "mount": 88,
+    "ifconfig": 65,
+    "rename": 63,
+    "cpio": 57,
+    "mktemp": 54,
+    "screen": 42,
+    "watch": 40,
+    "pstree": 37,
+    "tmux": 28,
+    "parallel": 26,
+    "{}": 23,
+    "finger": 23,
+    "bind": 19,
+    "ssh-keygen": 15,
+    "ffmpeg": 15,
+    "pushd": 14,
+    "compress": 14,
+    "vim": 13,
+    "md5": 12,
+    "dos2unix": 10,
+    "mogrify": 10,
+    "pv": 9,
+    "getent": 7,
+    "pr": 7
+  },
+  "effects_by_kind": {
+    "read": 11904,
+    "exec": 1765,
+    "write": 1509,
+    "delete": 916,
+    "permission": 621,
+    "network": 353,
+    "privilege": 273,
+    "move": 248,
+    "process": 60
+  },
+  "timing_ms": {
+    "mean": 0.0574,
+    "p50": 0.0445,
+    "p95": 0.1551,
+    "p99": 0.2154,
+    "max": 0.4804
+  },
+  "gate_passed": true
+}

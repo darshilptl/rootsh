@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from db_guard import guarded_connect
 from rootsh.storage.db import DatabaseKind, open_database
 from rootsh.storage.migrations import migrate
 from rootsh.storage.schema import MIGRATIONS
+from support.db_guard import guarded_connect
 
 
 @pytest.fixture(autouse=True, scope="session")

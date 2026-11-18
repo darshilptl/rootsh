@@ -1,16 +1,16 @@
 # P1 — Event model and storage: results
 
-**Design:** `docs/modules/01-events-storage.md` · **Branch:**
+**Design:** `docs/design/01-events-storage.md` · **Branch:**
 `feature/p1-events-storage` · **Date:** 2026-11-18
 **Environment:** Python 3.12.15 (uv), SQLite 3.53.1, mypy 2.4.1,
 pytest 9.2.0, ruff 0.17.5.
 
 ## Gate
 
-| Gate item (PLAN.md) | Result |
+| Gate item (plan.md) | Result |
 |---|---|
 | Migrations run | ✅ both DBs created from nothing, second run applies nothing, status clean (output below) [RUN] |
-| A test writing to a non-temporary database fails | ✅ `tests/test_db_guard.py`, 7/7 passed: outside-tmp path, raw `sqlite3.connect`, escaping symlink, URIs and odd arguments rejected before any file is created [RUN] |
+| A test writing to a non-temporary database fails | ✅ `tests/storage/test_db_guard.py`, 7/7 passed: outside-tmp path, raw `sqlite3.connect`, escaping symlink, URIs and odd arguments rejected before any file is created [RUN] |
 
 ### `rootsh db` on fresh files [RUN]
 
@@ -68,9 +68,9 @@ exit=1
 | # | Criterion | Evidence |
 |---|---|---|
 | 1 | migrate from nothing, idempotent, status clean | gate output above; `test_migrate_from_nothing_then_noop`, `test_migrate_then_status` |
-| 2 | non-temporary DB in a test fails | `tests/test_db_guard.py` |
+| 2 | non-temporary DB in a test fails | `tests/storage/test_db_guard.py` |
 | 3 | edited migration, newer DB, wrong kind raise and leave the DB unchanged | `test_edited_migration_is_refused_and_nothing_applies`, `test_newer_database_is_refused`, `test_kinds_cannot_be_swapped`, `test_wrong_kind_is_an_error`, `test_failed_migration_rolls_back_completely` |
-| 4 | normalizers on real payloads, every row and parse-error path | `tests/test_normalize.py` (58) on `tests/fixtures/hook_payloads.json`, sanitized from P0/P1 recordings |
+| 4 | normalizers on real payloads, every row and parse-error path | `tests/normalize/test_normalize.py` (58) on `tests/fixtures/hook_payloads.json`, sanitized from P0/P1 recordings |
 | 5 | ingest: idempotency, OpenCode turn linking, per-session seq | `test_ingest_*`, `test_opencode_tool_events_join_the_latest_prompt` |
 | 6 | second heldout run for the same model and dataset rejected | `test_heldout_is_evaluated_once_per_model_and_dataset` |
 | 7 | ruff, ruff format, mypy `--strict`, pytest green | below |

@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from db_guard import DatabaseGuardError
 from rootsh.storage.db import DatabaseKind, open_database
+from support.db_guard import DatabaseGuardError
 
 
 def test_opening_a_database_outside_tmp_fails_before_creating_it() -> None:
@@ -39,4 +39,7 @@ def test_uris_and_odd_arguments_are_rejected(database: object) -> None:
 
 def test_temporary_and_memory_databases_are_allowed(tmp_path: Path) -> None:
     open_database(tmp_path / "ok.db", DatabaseKind.RUNTIME).close()
-    sqlite3.connect(":memory:").close()
+    assert (tmp_path / "ok.db").exists()
+    memory = sqlite3.connect(":memory:")
+    assert memory.execute("SELECT 1").fetchone() == (1,)
+    memory.close()
