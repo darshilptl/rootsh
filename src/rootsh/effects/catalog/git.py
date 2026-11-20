@@ -274,6 +274,15 @@ def _apply(repo: Repo, args: list[Word]) -> Outcome:
     return out
 
 
+def _reflog(repo: Repo, args: list[Word]) -> Outcome:
+    """`git reflog [show]` lists; `expire` and `delete` drop the entries that
+    let a lost commit be recovered."""
+    action = args[0].text if args and not args[0].text.startswith("-") else "show"
+    if action in ("expire", "delete"):
+        return Outcome([repo.fx(K.DELETE, ".git/logs", recursive=True, detail="ref")])
+    return Outcome([repo.fx(K.READ, recursive=True)])
+
+
 _SUBCOMMANDS: Mapping[str, Callable[[Repo, list[Word]], Outcome]] = {
     "reset": _reset,
     "checkout": _checkout,
@@ -292,6 +301,7 @@ _SUBCOMMANDS: Mapping[str, Callable[[Repo, list[Word]], Outcome]] = {
     "mv": _mv,
     "init": _init,
     "apply": _apply,
+    "reflog": _reflog,
 }
 
 

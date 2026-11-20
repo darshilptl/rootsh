@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 
-from rootsh.effects.catalog import execution, files, git, network, system
+from rootsh.effects.catalog import devtools, execution, files, git, network, system
 from rootsh.effects.catalog.base import Handler, Invocation, Outcome
 
 
@@ -24,6 +24,7 @@ CATALOG: Mapping[str, Handler] = _merge(
     network.CATALOG,
     execution.CATALOG,
     system.CATALOG,
+    devtools.CATALOG,
     {"git": git.git},
 )
 

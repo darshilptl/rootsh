@@ -306,9 +306,22 @@ def shell(inv: Invocation) -> Outcome:
     return _stdin_code(inv)
 
 
-def interpreter(spec: Spec, code_options: tuple[str, ...], *, in_place: bool = False) -> Handler:
+# Options that print a version or help text. Only with no script and no code
+# do they run nothing: `python -v` is verbose, `ruby -v x.rb` runs x.rb.
+_INFO = ("version", "help")
+
+
+def interpreter(
+    spec: Spec,
+    code_options: tuple[str, ...],
+    *,
+    in_place: bool = False,
+    info: tuple[str, ...] = ("v", "h"),
+) -> Handler:
     def handler(inv: Invocation) -> Outcome:
         p = parse(inv.args, spec)
+        if p.has(*info, *_INFO) and not p.has(*code_options) and not p.positionals:
+            return Outcome()
         if p.has(*code_options):
             out = _code(inv)
             if in_place and p.has("i"):
@@ -326,6 +339,8 @@ _PIP_INSTALLS = frozenset({"install", "download", "wheel"})
 
 def python(inv: Invocation) -> Outcome:
     p = parse(inv.args, Spec.of("cmWXQ", stop=True))
+    if p.has("V", "h", *_INFO) and not p.has("c", "m") and not p.positionals:
+        return Outcome()
     if p.has("c"):
         return _code(inv)
     module = p.value("m")
@@ -546,9 +561,11 @@ CATALOG: Mapping[str, Handler] = {
         Spec.of("epr", ["eval", "print", "require"], stop=True), ("e", "p", "eval", "print")
     ),
     "ruby": interpreter(Spec.of("eIrC", stop=True), ("e",)),
-    "perl": interpreter(Spec.of("eEIMm", stop=True), ("e", "E"), in_place=True),
+    "perl": interpreter(
+        Spec.of("eEIMm", stop=True), ("e", "E"), in_place=True, info=("v", "V", "h")
+    ),
     "php": interpreter(Spec.of("rdcf", stop=True), ("r",)),
-    "lua": interpreter(Spec.of("el", stop=True), ("e",)),
+    "lua": interpreter(Spec.of("el", stop=True), ("e",), info=("v",)),
     "Rscript": interpreter(Spec.of("e", stop=True), ("e",)),
     "npm": node_package_manager,
     "pnpm": node_package_manager,

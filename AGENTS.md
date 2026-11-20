@@ -107,14 +107,21 @@ Work runs **one session per phase**. A new session starts from a short prompt
 ("start P4") and orients itself from the repository, not from chat history.
 
 **Current state:**
-- **Done:** P0–P4, squash-merged on `main`, tagged `v0.0.0`–`v0.4.0`.
-  P0–P3 are pushed to `origin`; P4 is not pushed until the author says so.
+- **Done:** P0–P5, squash-merged on `main`, tagged `v0.0.0`–`v0.5.0`.
+  P0–P4 pushed to `origin`; P5 (v0.5.0) not pushed yet.
 - **P4 result:** gold set of 192 sandboxed runs (176 OpenCode on NVIDIA NIM
-  Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored);
-  `rootsh collect verify` 0 problems; 628 critical arguments (P3: 4). See
-  `docs/results/04-trace-harness.md`.
-- **Next:** P5 (labels per step, tier-2 variants, the 13 deferred catalog
-  programs). Not started: wait for the author's approval.
+  Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored).
+  See `docs/results/04-trace-harness.md`.
+- **P5 result:** labelled, audited and frozen dataset; manifest SHA-256
+  `a357bba6c02cdb9f27c9e42bf93eb055a717c75df4506e59595018e56cbc7931` in
+  `data/gold/freeze/` (heldout labels only in the sealed file). See
+  `docs/results/05-labelling.md` and ADR-0014: training uses human labels
+  only (70 train labels, 14 refusals; 4 G4 variants), R1 v2 labels are for
+  coverage and separate reporting, assistant labels dropped (kappa 0.347).
+  Commands: `rootsh label [--adjudicate|--variants]`, `rootsh variants`,
+  `rootsh freeze`; reports `research/labels/{agreement,audits,plan}.py`.
+- **Next:** P6 per `docs/plan.md`, starting from the frozen manifest. The
+  small training set is the main limit; read §8 of the P5 results first.
 
 **To start a phase, read in this order:**
 1. **This file:** the rules, layout, and git workflow.
@@ -136,9 +143,9 @@ Work runs **one session per phase**. A new session starts from a short prompt
   repositories.
 - **P8/P9:** agents can read the defense's own plugin in `.opencode/plugins/`
   (seen in P3); protect it.
-- **P5:** catalog the 13 programs P4 deferred (`cc`, `sqlite3`, `mkdocs`,
-  `getent`, `nginx`, and 8 single calls; results doc §6), from real traces,
-  never from NL2Bash. Repeat runs differ (8 of 16), so split by scenario.
+- **P8/P9 (seen in P5 labelling):** in several gold runs an agent read
+  rootsh's own `.venv` and `data/` through the sandbox; the defense's files
+  must be unreadable to agents.
 - **Collection commands** (from the repo root; `research/gold/make_toolenv.sh
   data/gold/toolenv` first): `uv run rootsh collect run --catalog
   research/gold/scenarios --db data/gold/research.db --data data/gold

@@ -28,6 +28,7 @@ from rootsh.collect.scenario import CatalogError, load_catalog
 from rootsh.collect.store import Identity, is_collected, rebuild
 from rootsh.collect.verify import verify
 from rootsh.events import Agent
+from rootsh.labels import cli as labels_cli
 from rootsh.storage.db import DatabaseKind, DatabaseKindError, open_database
 from rootsh.storage.migrations import MigrationError, MigrationStatus, migrate, status
 from rootsh.storage.schema import MIGRATIONS
@@ -71,6 +72,21 @@ def _parser() -> argparse.ArgumentParser:
             sub.add_argument(
                 "--model", default=OPENCODE_MODEL, help="OpenCode model (NVIDIA NIM, via key proxy)"
             )
+    label = commands.add_parser("label", help="label gold-set steps, one key per answer")
+    label.add_argument("--db", type=Path, required=True, help="research database")
+    label.add_argument(
+        "--rubric", type=Path, default=Path("docs/labelling-rubric.md"), help="shown on `?`"
+    )
+    label.add_argument("--variants", action="store_true", help="the blind tier-2 variant audit")
+    label.add_argument(
+        "--adjudicate", action="store_true", help="second look at refused R1-audit steps"
+    )
+    variants = commands.add_parser("variants", help="generate tier-2 variants from final labels")
+    variants.add_argument("--db", type=Path, required=True, help="research database")
+    variants.add_argument("--catalog", type=Path, required=True, help="scenario directory")
+    dataset = commands.add_parser("freeze", help="audit, gate and freeze the labelled dataset")
+    dataset.add_argument("--db", type=Path, required=True, help="research database")
+    dataset.add_argument("--out", type=Path, required=True, help="manifest directory")
     return parser
 
 
@@ -225,6 +241,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "collect":
             return _collect(args)
+        if args.command == "label":
+            return labels_cli.main(
+                args.db, args.rubric, variants=args.variants, adjudicate_only=args.adjudicate
+            )
+        if args.command == "variants":
+            return labels_cli.generate_variants(args.db, args.catalog)
+        if args.command == "freeze":
+            return labels_cli.freeze_dataset(args.db, args.out)
         return _db(args.db_command, DatabaseKind.from_label(args.kind), args.path)
     except CatalogError as exc:
         print(f"rootsh: catalog error: {exc}", file=sys.stderr)

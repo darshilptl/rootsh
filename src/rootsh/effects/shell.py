@@ -145,8 +145,12 @@ class _Walker:
         if kind == "redirected_statement":
             body = node.child_by_field_name("body")
             after = self.statement(body, ctx) if body is not None else ctx
+            # tree-sitter-bash hangs `a && b > f` on the whole list, but bash
+            # binds the redirect to `b`, after any cd in `a`. A real compound
+            # (`{ cd x; b; } > f`) opens f first, in the original directory.
+            at = after if body is not None and body.type == "list" else ctx
             for redirect in node.children_by_field_name("redirect"):
-                self.redirect(redirect, ctx)
+                self.redirect(redirect, at)
             return after
         if kind in _REDIRECTS:
             self.redirect(node, ctx)

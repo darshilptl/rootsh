@@ -2342,9 +2342,16 @@
      "detail": "sudo"
     },
     {
+     "kind": "network",
+     "target": "postgres://localhost:5432",
+     "program": "psql",
+     "detail": "connect"
+    },
+    {
      "kind": "exec",
-     "target": "psql",
-     "program": "psql"
+     "target": "postgres://localhost:5432",
+     "program": "psql",
+     "detail": "remote"
     }
    ],
    "programs": [
@@ -2352,7 +2359,7 @@
     "psql"
    ],
    "opaque": [
-    "unknown_program:psql"
+    "remote_exec"
    ],
    "parse_error": false,
    "id": 127
@@ -4712,15 +4719,16 @@
    "effects": [
     {
      "kind": "exec",
-     "target": "terraform",
-     "program": "terraform"
+     "target": "terraform-destroy",
+     "program": "terraform",
+     "detail": "remote"
     }
    ],
    "programs": [
     "terraform"
    ],
    "opaque": [
-    "unknown_program:terraform"
+    "remote_exec"
    ],
    "parse_error": false,
    "id": 243

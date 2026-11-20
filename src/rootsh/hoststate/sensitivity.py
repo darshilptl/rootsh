@@ -35,6 +35,7 @@ RULES: tuple[Rule, ...] = (
     *_prefixes("secret", "~/.ssh", "~/.aws", "~/.gnupg", "~/.kube", "~/.netrc",
                "~/.git-credentials", "~/.config/gh", "~/.docker/config.json"),
     *_names("secret", ".env", ".env.*", "*.pem", "*.key", "id_rsa*", "id_ed25519*", "id_ecdsa*"),
+    *_segments("secret", ("secrets",), ("credentials",)),
     *_segments("vcs_internal", (".git",)),
     *_segments("data_store", ("migrations",)),
     *_names("data_store", "*.db", "*.sqlite", "*.sqlite3", "*.sql"),

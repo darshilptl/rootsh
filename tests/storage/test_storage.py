@@ -84,7 +84,11 @@ def test_kind_labels_round_trip(kind: DatabaseKind) -> None:
     ("kind", "expected", "versions"),
     [
         (DatabaseKind.RUNTIME, {"sessions", "events"}, [1]),
-        (DatabaseKind.RESEARCH, {"traces", "trace_events", "runs", "trace_runs"}, [1, 2]),
+        (
+            DatabaseKind.RESEARCH,
+            {"traces", "trace_events", "runs", "trace_runs", "step_labels", "variants", "freezes"},
+            [1, 2, 3, 4, 5],
+        ),
     ],
 )
 def test_migrate_from_nothing_then_noop(

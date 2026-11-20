@@ -125,6 +125,189 @@ CREATE TABLE trace_runs (
 ) STRICT;
 """,
     ),
+    Migration(
+        3,
+        "step_labels",
+        """
+-- Labels per proposed step (docs/design/05-labelling.md §3). A step is a
+-- tool_pre event; step_sha256 hashes the context the labeller saw, so a
+-- later normalizer or catalog change makes the label stale, never silently
+-- reused.
+CREATE TABLE step_labels (
+    id             INTEGER PRIMARY KEY,
+    trace_id       TEXT NOT NULL,
+    seq            INTEGER NOT NULL,
+    annotator      TEXT NOT NULL CHECK (annotator IN ('author', 'rule:R1')),
+    source         TEXT NOT NULL CHECK (source IN ('human', 'rule', 'adjudicated')),
+    round          TEXT NOT NULL CHECK (round IN ('main', 'retest', 'audit')),
+    authorized     INTEGER NOT NULL CHECK (authorized IN (0, 1)),
+    cause          TEXT NOT NULL
+                   CHECK (cause IN ('benign', 'injection', 'hallucination', 'deviation')),
+    harm           TEXT NOT NULL
+                   CHECK (harm IN ('none', 'destroy', 'tamper', 'exfiltrate', 'persist',
+                                   'escalate', 'availability', 'defense-tamper')),
+    severity       INTEGER NOT NULL CHECK (severity BETWEEN 0 AND 3),
+    technique      TEXT CHECK (technique IS NULL OR technique IN
+                       ('plain', 'chained', 'obfuscated', 'indirection', 'split', 'smuggling')),
+    reason_code    TEXT NOT NULL CHECK (reason_code IN
+                       ('asked', 'needed-for-task', 'harmless-read', 'clarify',
+                        'outside-scope', 'from-content', 'invented-target',
+                        'broader-than-asked', 'assumed-state', 'secret-access', 'rule:R1')),
+    note           TEXT,
+    rubric_version TEXT NOT NULL,
+    step_sha256    TEXT NOT NULL CHECK (length(step_sha256) = 64),
+    created_at     TEXT NOT NULL,
+    FOREIGN KEY (trace_id, seq) REFERENCES trace_events (trace_id, seq),
+    CHECK ((authorized = 1) = (cause = 'benign')),
+    CHECK (authorized = 0 OR (harm = 'none' AND severity = 0 AND technique IS NULL)),
+    CHECK (authorized = 1 OR technique IS NOT NULL),
+    CHECK ((source = 'rule') = (annotator = 'rule:R1')),
+    CHECK ((reason_code = 'rule:R1') = (source = 'rule')),
+    UNIQUE (trace_id, seq, annotator, round)
+) STRICT;
+
+-- Only proposed actions can be labelled.
+CREATE TRIGGER step_labels_tool_pre_only BEFORE INSERT ON step_labels
+WHEN (SELECT kind FROM trace_events WHERE trace_id = NEW.trace_id AND seq = NEW.seq)
+     IS NOT 'tool_pre'
+BEGIN
+    SELECT RAISE(ABORT, 'only tool_pre events can be labelled');
+END;
+
+-- "Unsure" answers: served again later, never a label by themselves.
+CREATE TABLE step_deferrals (
+    trace_id    TEXT NOT NULL,
+    seq         INTEGER NOT NULL,
+    step_sha256 TEXT NOT NULL CHECK (length(step_sha256) = 64),
+    created_at  TEXT NOT NULL,
+    PRIMARY KEY (trace_id, seq),
+    FOREIGN KEY (trace_id, seq) REFERENCES trace_events (trace_id, seq)
+) STRICT;
+""",
+    ),
+    Migration(
+        4,
+        "variants_freezes",
+        """
+-- Tier-2 variants (docs/design/05-labelling.md §7): one edit of a labelled
+-- real step, labelled by a fixed rule from the parent's label.
+CREATE TABLE variants (
+    id              TEXT PRIMARY KEY CHECK (length(id) = 64),
+    parent_trace_id TEXT NOT NULL,
+    parent_seq      INTEGER NOT NULL,
+    parent_label_id INTEGER NOT NULL REFERENCES step_labels (id),
+    generator       TEXT NOT NULL CHECK (generator IN ('G1', 'G2', 'G3', 'G4')),
+    rules_version   TEXT NOT NULL,
+    edits_json      TEXT NOT NULL,
+    authorized     INTEGER NOT NULL CHECK (authorized IN (0, 1)),
+    cause          TEXT NOT NULL
+                   CHECK (cause IN ('benign', 'injection', 'hallucination', 'deviation')),
+    harm           TEXT NOT NULL
+                   CHECK (harm IN ('none', 'destroy', 'tamper', 'exfiltrate', 'persist',
+                                   'escalate', 'availability', 'defense-tamper')),
+    severity       INTEGER NOT NULL CHECK (severity BETWEEN 0 AND 3),
+    technique      TEXT CHECK (technique IS NULL OR technique IN
+                       ('plain', 'chained', 'obfuscated', 'indirection', 'split', 'smuggling')),
+    reason_code    TEXT NOT NULL CHECK (reason_code IN
+                       ('asked', 'needed-for-task', 'harmless-read', 'clarify',
+                        'outside-scope', 'from-content', 'invented-target',
+                        'broader-than-asked', 'assumed-state', 'secret-access')),
+    step_sha256     TEXT NOT NULL CHECK (length(step_sha256) = 64),
+    created_at      TEXT NOT NULL,
+    FOREIGN KEY (parent_trace_id, parent_seq) REFERENCES trace_events (trace_id, seq),
+    CHECK ((authorized = 1) = (cause = 'benign')),
+    CHECK (authorized = 0 OR (harm = 'none' AND severity = 0 AND technique IS NULL)),
+    CHECK (authorized = 1 OR technique IS NOT NULL)
+) STRICT;
+
+-- The author's blind answers on the variant audit sample.
+CREATE TABLE variant_audit (
+    variant_id     TEXT PRIMARY KEY REFERENCES variants (id),
+    authorized     INTEGER NOT NULL CHECK (authorized IN (0, 1)),
+    cause          TEXT NOT NULL
+                   CHECK (cause IN ('benign', 'injection', 'hallucination', 'deviation')),
+    harm           TEXT NOT NULL
+                   CHECK (harm IN ('none', 'destroy', 'tamper', 'exfiltrate', 'persist',
+                                   'escalate', 'availability', 'defense-tamper')),
+    severity       INTEGER NOT NULL CHECK (severity BETWEEN 0 AND 3),
+    technique      TEXT CHECK (technique IS NULL OR technique IN
+                       ('plain', 'chained', 'obfuscated', 'indirection', 'split', 'smuggling')),
+    reason_code    TEXT NOT NULL CHECK (reason_code IN
+                       ('asked', 'needed-for-task', 'harmless-read', 'clarify',
+                        'outside-scope', 'from-content', 'invented-target',
+                        'broader-than-asked', 'assumed-state', 'secret-access')),
+    note           TEXT,
+    rubric_version TEXT NOT NULL,
+    created_at     TEXT NOT NULL,
+    CHECK ((authorized = 1) = (cause = 'benign')),
+    CHECK (authorized = 0 OR (harm = 'none' AND severity = 0 AND technique IS NULL)),
+    CHECK (authorized = 1 OR technique IS NOT NULL)
+) STRICT;
+
+-- Re-test disagreements: which of the author's two answers stands (ADR-0011).
+CREATE TABLE adjudications (
+    trace_id        TEXT NOT NULL,
+    seq             INTEGER NOT NULL,
+    chosen_label_id INTEGER NOT NULL REFERENCES step_labels (id),
+    created_at      TEXT NOT NULL,
+    PRIMARY KEY (trace_id, seq),
+    FOREIGN KEY (trace_id, seq) REFERENCES trace_events (trace_id, seq)
+) STRICT;
+
+-- A frozen dataset: the manifest's hash, recorded once (design 05 §8).
+CREATE TABLE freezes (
+    manifest_sha256 TEXT PRIMARY KEY CHECK (length(manifest_sha256) = 64),
+    manifest_path   TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    notes           TEXT
+) STRICT;
+""",
+    ),
+    Migration(
+        5,
+        "assistant_labels",
+        """
+-- Labels by a disclosed AI annotator (ADR-0012), kept apart from the author's.
+-- 'share': training steps the author may not reach; used only if the author
+-- leaves the step unlabelled. 'agreement': a blind overlap sample for the
+-- author-vs-assistant kappa; never a final label.
+CREATE TABLE assistant_labels (
+    trace_id       TEXT NOT NULL,
+    seq            INTEGER NOT NULL,
+    model          TEXT NOT NULL,
+    purpose        TEXT NOT NULL CHECK (purpose IN ('share', 'agreement')),
+    authorized     INTEGER NOT NULL CHECK (authorized IN (0, 1)),
+    cause          TEXT NOT NULL
+                   CHECK (cause IN ('benign', 'injection', 'hallucination', 'deviation')),
+    harm           TEXT NOT NULL
+                   CHECK (harm IN ('none', 'destroy', 'tamper', 'exfiltrate', 'persist',
+                                   'escalate', 'availability', 'defense-tamper')),
+    severity       INTEGER NOT NULL CHECK (severity BETWEEN 0 AND 3),
+    technique      TEXT CHECK (technique IS NULL OR technique IN
+                       ('plain', 'chained', 'obfuscated', 'indirection', 'split', 'smuggling')),
+    reason_code    TEXT NOT NULL CHECK (reason_code IN
+                       ('asked', 'needed-for-task', 'harmless-read', 'clarify',
+                        'outside-scope', 'from-content', 'invented-target',
+                        'broader-than-asked', 'assumed-state', 'secret-access')),
+    note           TEXT,
+    rubric_version TEXT NOT NULL,
+    step_sha256    TEXT NOT NULL CHECK (length(step_sha256) = 64),
+    created_at     TEXT NOT NULL,
+    PRIMARY KEY (trace_id, seq),
+    FOREIGN KEY (trace_id, seq) REFERENCES trace_events (trace_id, seq),
+    CHECK ((authorized = 1) = (cause = 'benign')),
+    CHECK (authorized = 0 OR (harm = 'none' AND severity = 0 AND technique IS NULL)),
+    CHECK (authorized = 1 OR technique IS NOT NULL)
+) STRICT;
+
+CREATE TRIGGER assistant_labels_tool_pre_only BEFORE INSERT ON assistant_labels
+WHEN (SELECT kind FROM trace_events WHERE trace_id = NEW.trace_id AND seq = NEW.seq)
+     IS NOT 'tool_pre'
+BEGIN
+    SELECT RAISE(ABORT, 'only tool_pre events can be labelled');
+END;
+""",
+    ),
 )
 
 MIGRATIONS: Mapping[DatabaseKind, tuple[Migration, ...]] = {
