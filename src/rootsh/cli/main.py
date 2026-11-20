@@ -29,6 +29,10 @@ from rootsh.collect.store import Identity, is_collected, rebuild
 from rootsh.collect.verify import verify
 from rootsh.events import Agent
 from rootsh.labels import cli as labels_cli
+from rootsh.model import cli as model_cli
+from rootsh.model.bundle import BundleError
+from rootsh.model.data import FrozenDataError
+from rootsh.model.evaluate import AlreadyEvaluatedError
 from rootsh.storage.db import DatabaseKind, DatabaseKindError, open_database
 from rootsh.storage.migrations import MigrationError, MigrationStatus, migrate, status
 from rootsh.storage.schema import MIGRATIONS
@@ -87,6 +91,11 @@ def _parser() -> argparse.ArgumentParser:
     dataset = commands.add_parser("freeze", help="audit, gate and freeze the labelled dataset")
     dataset.add_argument("--db", type=Path, required=True, help="research database")
     dataset.add_argument("--out", type=Path, required=True, help="manifest directory")
+    model = commands.add_parser("model", help="train, or evaluate heldout once (design 06)")
+    model.add_argument("model_command", choices=("train", "evaluate"))
+    model.add_argument("--db", type=Path, required=True, help="research database")
+    model.add_argument("--manifest", type=Path, required=True, help="frozen manifest file")
+    model.add_argument("--out", type=Path, required=True, help="model bundle directory")
     return parser
 
 
@@ -236,6 +245,16 @@ def _collect_loop(
     return EXIT_OK
 
 
+def _model(args: argparse.Namespace) -> int:
+    conn = _open_research(args.db)
+    try:
+        if args.model_command == "train":
+            return model_cli.train(conn, args.manifest, args.out)
+        return model_cli.evaluate_heldout(conn, args.manifest, args.out)
+    finally:
+        conn.close()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
@@ -249,7 +268,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             return labels_cli.generate_variants(args.db, args.catalog)
         if args.command == "freeze":
             return labels_cli.freeze_dataset(args.db, args.out)
+        if args.command == "model":
+            return _model(args)
         return _db(args.db_command, DatabaseKind.from_label(args.kind), args.path)
+    except (AlreadyEvaluatedError, BundleError, FrozenDataError) as exc:
+        print(f"rootsh: model error: {exc}", file=sys.stderr)
+        return EXIT_FAILED
     except CatalogError as exc:
         print(f"rootsh: catalog error: {exc}", file=sys.stderr)
         return EXIT_FAILED

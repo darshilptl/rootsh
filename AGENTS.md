@@ -107,8 +107,8 @@ Work runs **one session per phase**. A new session starts from a short prompt
 ("start P4") and orients itself from the repository, not from chat history.
 
 **Current state:**
-- **Done:** P0–P5, squash-merged on `main`, tagged `v0.0.0`–`v0.5.0`.
-  P0–P4 pushed to `origin`; P5 (v0.5.0) not pushed yet.
+- **Done:** P0–P6, squash-merged on `main`, tagged `v0.0.0`–`v0.6.0`.
+  P0–P5 pushed to `origin`; P6 (v0.6.0) not pushed yet.
 - **P4 result:** gold set of 192 sandboxed runs (176 OpenCode on NVIDIA NIM
   Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored).
   See `docs/results/04-trace-harness.md`.
@@ -120,8 +120,16 @@ Work runs **one session per phase**. A new session starts from a short prompt
   coverage and separate reporting, assistant labels dropped (kappa 0.347).
   Commands: `rootsh label [--adjudicate|--variants]`, `rootsh variants`,
   `rootsh freeze`; reports `research/labels/{agreement,audits,plan}.py`.
-- **Next:** P6 per `docs/plan.md`, starting from the frozen manifest. The
-  small training set is the main limit; read §8 of the P5 results first.
+- **P6 result:** bundle `ca33283a3dde` in `data/models/p6-a357bba6c02c/`
+  (git-ignored), heldout evaluated once (5 rows in `model_runs`). Human
+  heldout AUC: full 0.631, impact 0.648, rules 0.612, action 0.592,
+  provenance 0.500; conformal (alpha 0.10) never allows, so 0 false allows
+  but ~935 asks per 1k authorized steps. See `docs/results/06-model.md`
+  and ADR-0015. Commands: `rootsh model train|evaluate --db --manifest
+  --out`; tables `research/model/report.py <db> <bundle>`.
+- **Next:** P7 per `docs/plan.md` (daemon, invariants, ask channels). The
+  model alone gives an unusable ask rate; P7's invariants and a read-only
+  fast path must carry the policy (results 06 §5).
 
 **To start a phase, read in this order:**
 1. **This file:** the rules, layout, and git workflow.

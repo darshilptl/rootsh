@@ -86,8 +86,17 @@ def test_kind_labels_round_trip(kind: DatabaseKind) -> None:
         (DatabaseKind.RUNTIME, {"sessions", "events"}, [1]),
         (
             DatabaseKind.RESEARCH,
-            {"traces", "trace_events", "runs", "trace_runs", "step_labels", "variants", "freezes"},
-            [1, 2, 3, 4, 5],
+            {
+                "traces",
+                "trace_events",
+                "runs",
+                "trace_runs",
+                "step_labels",
+                "variants",
+                "freezes",
+                "model_runs",
+            },
+            [1, 2, 3, 4, 5, 6],
         ),
     ],
 )

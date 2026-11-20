@@ -308,6 +308,25 @@ BEGIN
 END;
 """,
     ),
+    Migration(
+        6,
+        "model_runs",
+        """
+-- Every model evaluation (design 06 §6). The UNIQUE key makes "heldout is
+-- evaluated once per frozen model" a database rule, not a convention.
+CREATE TABLE model_runs (
+    id              INTEGER PRIMARY KEY,
+    model_name      TEXT NOT NULL,
+    model_sha256    TEXT NOT NULL CHECK (length(model_sha256) = 64),
+    bundle_sha256   TEXT NOT NULL CHECK (length(bundle_sha256) = 64),
+    manifest_sha256 TEXT NOT NULL REFERENCES freezes (manifest_sha256),
+    split           TEXT NOT NULL CHECK (split IN ('validation', 'heldout')),
+    metrics_json    TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    UNIQUE (model_sha256, split)
+) STRICT;
+""",
+    ),
 )
 
 MIGRATIONS: Mapping[DatabaseKind, tuple[Migration, ...]] = {
