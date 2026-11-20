@@ -100,3 +100,62 @@ rootsh/
 
 Checks (all must pass before a merge): `uv run ruff check`,
 `uv run ruff format --check`, `uv run mypy`, `uv run pytest`.
+
+## 7. Session handoff (read this first in a new session)
+
+Work runs **one session per phase**. A new session starts from a short prompt
+("start P4") and orients itself from the repository, not from chat history.
+
+**Current state:**
+- **Done:** P0–P4, squash-merged on `main`, tagged `v0.0.0`–`v0.4.0`.
+  P0–P3 are pushed to `origin`; P4 is not pushed until the author says so.
+- **P4 result:** gold set of 192 sandboxed runs (176 OpenCode on NVIDIA NIM
+  Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored);
+  `rootsh collect verify` 0 problems; 628 critical arguments (P3: 4). See
+  `docs/results/04-trace-harness.md`.
+- **Next:** P5 (labels per step, tier-2 variants, the 13 deferred catalog
+  programs). Not started: wait for the author's approval.
+
+**To start a phase, read in this order:**
+1. **This file:** the rules, layout, and git workflow.
+2. **`docs/plan.md`:** the build order table and the phase's gate.
+3. **`docs/decisions/`:** every ADR. P4 is governed by **ADR-0008**, the
+   tiered dataset:
+   - a small real gold set, run in Landlock/bwrap sandboxes, not VMs;
+   - offline generated variants for training;
+   - a tight RAM and Claude Code token budget.
+4. **`docs/results/00-verification.md`, "Consequences for the design":**
+   binding rules for every later phase.
+5. **The `docs/results/` file of the previous phase:** its limits and open
+   items.
+6. **`git log --oneline`:** one commit per phase.
+
+**Open items carried forward:**
+- **P7:** decide which process runs the host-state probes (the daemon user
+  may not be able to read `$HOME`), and measure probe latency on large
+  repositories.
+- **P8/P9:** agents can read the defense's own plugin in `.opencode/plugins/`
+  (seen in P3); protect it.
+- **P5:** catalog the 13 programs P4 deferred (`cc`, `sqlite3`, `mkdocs`,
+  `getent`, `nginx`, and 8 single calls; results doc §6), from real traces,
+  never from NL2Bash. Repeat runs differ (8 of 16), so split by scenario.
+- **Collection commands** (from the repo root; `research/gold/make_toolenv.sh
+  data/gold/toolenv` first): `uv run rootsh collect run --catalog
+  research/gold/scenarios --db data/gold/research.db --data data/gold
+  --toolenv data/gold/toolenv --agent opencode` (then `claude_code`), with
+  `NVIDIA_API_KEY` set in the author's own shell (never in chat); it resumes,
+  and stops itself on a provider error. After a normalizer or sanitizer
+  change run `rootsh collect rebuild` (same flags), then `verify`, as the
+  author. Results: `research/gold/report.py`.
+
+**Reusable tools:**
+- **`research/p3-transcripts/`:** safe recorders for both agents; only
+  read-only actions run, as decided by rootsh's own effect extractor.
+- **`research/robustness/`:** the NL2Bash gate.
+
+**Finishing a phase:**
+1. Gate passed, with results in `docs/results/NN-name.md`.
+2. `version = "0.N.0"`.
+3. Squash-merge and tag.
+4. Update **Current state** above.
+5. Push only when the author says so.

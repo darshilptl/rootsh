@@ -20,7 +20,19 @@ from rootsh.normalize._fields import require_mapping, require_object, require_st
 
 HOOKS = frozenset({"session.prompt", "tool.execute.before", "tool.execute.after"})
 
-_TOOLS: Mapping[str, Tool] = {"shell": Tool.SHELL, "write": Tool.WRITE}
+# Names and input keys recorded from OpenCode v2.3.0 (shell/write in P1;
+# read/edit/glob/grep/webfetch/websearch in the P4 gold traces). Anything else
+# is Tool.OTHER.
+_TOOLS: Mapping[str, Tool] = {
+    "shell": Tool.SHELL,
+    "write": Tool.WRITE,
+    "read": Tool.READ,
+    "edit": Tool.EDIT,
+    "glob": Tool.READ,
+    "grep": Tool.READ,
+    "webfetch": Tool.FETCH,
+    "websearch": Tool.FETCH,
+}
 
 _AFTER_STATUS: Mapping[str, EventKind] = {
     "completed": EventKind.TOOL_POST,

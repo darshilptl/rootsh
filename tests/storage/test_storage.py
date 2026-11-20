@@ -81,22 +81,22 @@ def test_kind_labels_round_trip(kind: DatabaseKind) -> None:
 
 
 @pytest.mark.parametrize(
-    ("kind", "expected"),
+    ("kind", "expected", "versions"),
     [
-        (DatabaseKind.RUNTIME, {"sessions", "events"}),
-        (DatabaseKind.RESEARCH, {"traces", "trace_events", "runs"}),
+        (DatabaseKind.RUNTIME, {"sessions", "events"}, [1]),
+        (DatabaseKind.RESEARCH, {"traces", "trace_events", "runs", "trace_runs"}, [1, 2]),
     ],
 )
 def test_migrate_from_nothing_then_noop(
-    tmp_path: Path, kind: DatabaseKind, expected: set[str]
+    tmp_path: Path, kind: DatabaseKind, expected: set[str], versions: list[int]
 ) -> None:
     conn = open_database(tmp_path / "db", kind)
-    assert migrate(conn, MIGRATIONS[kind]) == [1]
+    assert migrate(conn, MIGRATIONS[kind]) == versions
     assert expected <= tables(conn)
     assert migrate(conn, MIGRATIONS[kind]) == []
     current = status(conn, MIGRATIONS[kind])
     assert current.ok
-    assert current.applied == (1,)
+    assert current.applied == tuple(versions)
     assert current.pending == ()
 
 

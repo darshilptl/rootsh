@@ -244,4 +244,20 @@ def test_opencode_unknown_hook() -> None:
 
 
 def test_opencode_unknown_tool_is_other() -> None:
-    assert opencode.tool_for("webfetch") is Tool.OTHER
+    assert opencode.tool_for("execute") is Tool.OTHER  # Code Mode: no single effect kind
+
+
+@pytest.mark.parametrize(
+    ("name", "tool"),
+    [
+        ("read", Tool.READ),
+        ("edit", Tool.EDIT),
+        ("glob", Tool.READ),
+        ("grep", Tool.READ),
+        ("webfetch", Tool.FETCH),
+        ("websearch", Tool.FETCH),
+    ],
+)
+def test_opencode_tools_recorded_in_p4_are_mapped(name: str, tool: Tool) -> None:
+    # Recorded in the P4 gold traces (OpenCode v2.3.0); earlier they were OTHER.
+    assert opencode.tool_for(name) is tool

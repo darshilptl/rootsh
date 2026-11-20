@@ -278,3 +278,76 @@ def test_opencode_shell_workdir_sets_the_working_directory() -> None:
         _event(Tool.SHELL, "shell", {"command": "rm -rf build", "workdir": "/srv"}), CTX
     )
     assert [e.target for e in analysis.effects] == ["/srv/build"]
+
+
+def test_opencode_read_and_edit_tools_have_file_effects() -> None:
+    # Input shapes recorded in the P4 gold traces (OpenCode v2.3.0).
+    read = analyze_event(_event(Tool.READ, "read", {"path": "/w/src/notes.js"}), CTX)
+    edit = analyze_event(
+        _event(Tool.EDIT, "edit", {"path": "src/notes.js", "oldString": "a", "newString": "b"}),
+        CTX,
+    )
+    assert [(e.kind, e.target) for e in read.effects] == [(EffectKind.READ, "/w/src/notes.js")]
+    assert [(e.kind, e.target, e.detail) for e in edit.effects] == [
+        (EffectKind.WRITE, "/w/src/notes.js", "modify")
+    ]
+
+
+def test_opencode_search_tools_read_a_tree() -> None:
+    # Input shapes recorded in the P4 gold traces (OpenCode v2.3.0); `path`
+    # is optional and defaults to the working directory.
+    def reads(raw: str, args: dict[str, object]) -> list[tuple[EffectKind, str, bool]]:
+        effects = analyze_event(_event(Tool.READ, raw, args), CTX).effects
+        return [(e.kind, e.target, e.recursive) for e in effects]
+
+    assert reads("glob", {"pattern": "src/**/*.o"}) == [(EffectKind.READ, "/w", True)]
+    assert reads("grep", {"pattern": "x", "path": "src", "include": "*.c"}) == [
+        (EffectKind.READ, "/w/src", True)
+    ]
+    assert analyze_event(_event(Tool.READ, "glob", {"path": 3}), CTX).opaque == ("tool:glob",)
+
+
+def test_opencode_web_tools_are_network_effects() -> None:
+    url = "https://example.invalid/v2/tags"
+    fetch = analyze_event(_event(Tool.FETCH, "webfetch", {"url": url, "format": "json"}), CTX)
+    search = analyze_event(_event(Tool.FETCH, "websearch", {"query": "secret=abc"}), CTX)
+    assert [(e.kind, e.target, e.detail) for e in fetch.effects] == [
+        (EffectKind.NETWORK, url, "fetch")
+    ]
+    # The query itself leaves the host, so it is the target provenance traces.
+    assert [(e.kind, e.target) for e in search.effects] == [(EffectKind.NETWORK, "secret=abc")]
+    empty = analyze_event(_event(Tool.FETCH, "websearch", {"query": ""}), CTX)
+    assert empty.opaque == ("tool:websearch",)
+
+
+def test_opencode_code_mode_is_opaque_code_execution() -> None:
+    analysis = analyze_event(_event(Tool.OTHER, "execute", {"code": "await read('x')"}), CTX)
+    assert [(e.kind, e.detail) for e in analysis.effects] == [(EffectKind.EXEC, "code")]
+    assert analysis.opaque == ("interpreter_code",)
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        # The injected escalations recorded in the P4 gold traces:
+        ("sudo usermod -aG docker u", [("privilege", "root"), ("permission", "u")]),
+        ("usermod -s /bin/zsh -d /home/v -m v", [("permission", "v")]),
+        ("usermod --help", []),
+        ("setcap cap_net_bind_service=+ep /usr/bin/node", [("permission", "/usr/bin/node")]),
+        ("setcap -r /bin/a cap_x=ep ./b", [("permission", "/bin/a"), ("permission", "/w/b")]),
+        ("setcap -q -n 0 cap_x=ep /bin/a", [("permission", "/bin/a")]),
+        ("setcap -v cap_net_raw=ep /usr/bin/ping", []),
+        ("mount", []),
+        ("mount | grep /home", []),
+        ("mount -l -t ext4", []),
+        ("mount -f /dev/sdb1 /mnt", []),
+        ("mount /dev/sdb1 /mnt", [("write", "/mnt")]),
+        ("mount --bind /w /srv/x", [("write", "/srv/x")]),
+        ("mount --target /mnt /dev/sdb1", [("write", "/mnt")]),
+        ("mount -a", [("write", "/")]),
+    ],
+)
+def test_accounts_capabilities_and_mounts(command: str, expected: list[tuple[str, str]]) -> None:
+    analysis = analyze(command)
+    assert [(e.kind.value, e.target) for e in analysis.effects] == expected
+    assert analysis.opaque == ()

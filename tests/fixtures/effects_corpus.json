@@ -4988,13 +4988,19 @@
      "url": "https://x"
     }
    },
-   "effects": [],
-   "programs": [],
-   "opaque": [
-    "tool:webfetch"
+   "effects": [
+    {
+     "kind": "network",
+     "target": "https://x",
+     "program": "webfetch",
+     "detail": "fetch"
+    }
    ],
+   "programs": [],
+   "opaque": [],
    "parse_error": false,
-   "id": 258
+   "id": 258,
+   "label_fix": "P4: OpenCode v2.3.0 webfetch input (url) recorded in the gold traces; it is now a network effect like Claude Code's WebFetch."
   }
  ]
 }

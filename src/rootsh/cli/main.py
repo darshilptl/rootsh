@@ -3,17 +3,37 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
+import os
 import sqlite3
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
 from rootsh import __version__
+from rootsh.collect import keyproxy
+from rootsh.collect.runner import (
+    CLAUDE_RUN_CAP_USD,
+    OPENCODE_MODEL,
+    Backend,
+    CollectionStopError,
+    Host,
+    PlannedRun,
+    agent_version,
+    budget_left,
+    collect,
+    plan,
+)
+from rootsh.collect.scenario import CatalogError, load_catalog
+from rootsh.collect.store import Identity, is_collected, rebuild
+from rootsh.collect.verify import verify
+from rootsh.events import Agent
 from rootsh.storage.db import DatabaseKind, DatabaseKindError, open_database
 from rootsh.storage.migrations import MigrationError, MigrationStatus, migrate, status
 from rootsh.storage.schema import MIGRATIONS
 
 EXIT_OK, EXIT_FAILED, EXIT_USAGE = 0, 1, 2
+NVIDIA_KEY_ENV = "NVIDIA_API_KEY"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -30,6 +50,27 @@ def _parser() -> argparse.ArgumentParser:
         sub = db_commands.add_parser(name, help=text)
         sub.add_argument("kind", choices=[kind.label for kind in DatabaseKind])
         sub.add_argument("path", type=Path)
+
+    collect = commands.add_parser("collect", help="gold-set trace collection (research)")
+    collect_commands = collect.add_subparsers(dest="collect_command", required=True)
+    for name, text in (
+        ("run", "run planned scenarios in the sandbox and store their traces"),
+        ("verify", "check every stored run against its hashes and raw file"),
+        ("rebuild", "re-derive stored events and outputs from the raw files"),
+        ("plan", "list planned runs and whether each is collected"),
+    ):
+        sub = collect_commands.add_parser(name, help=text)
+        sub.add_argument("--catalog", type=Path, required=True, help="scenario directory")
+        sub.add_argument("--db", type=Path, required=True, help="research database")
+        sub.add_argument("--data", type=Path, required=True, help="raw trace directory")
+        if name == "run":
+            sub.add_argument("--agent", choices=[a.value for a in Agent], required=True)
+            sub.add_argument("--only", nargs="+", default=[], help="scenario ids")
+            sub.add_argument("--limit", type=int, default=None, help="at most N runs")
+            sub.add_argument("--toolenv", type=Path, default=None, help="venv offered to agents")
+            sub.add_argument(
+                "--model", default=OPENCODE_MODEL, help="OpenCode model (NVIDIA NIM, via key proxy)"
+            )
     return parser
 
 
@@ -67,10 +108,127 @@ def _db(command: str, kind: DatabaseKind, path: Path) -> int:
         conn.close()
 
 
+def _open_research(path: Path) -> sqlite3.Connection:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = open_database(path, DatabaseKind.RESEARCH, create=True)
+    migrate(conn, MIGRATIONS[DatabaseKind.RESEARCH])
+    return conn
+
+
+def _collect(args: argparse.Namespace) -> int:
+    catalog = load_catalog(args.catalog)
+    conn = _open_research(args.db)
+    try:
+        if args.collect_command == "verify":
+            problems = verify(conn, catalog, args.data, Identity.current())
+            (count,) = conn.execute("SELECT count(*) FROM trace_runs").fetchone()
+            print(f"verified {count} runs: {len(problems)} problems")
+            for problem in problems:
+                print(f"  - {problem}")
+            return EXIT_OK if not problems else EXIT_FAILED
+        if args.collect_command == "rebuild":
+            with (args.data / "collect.lock").open("w") as lock:
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    print("rootsh: a collection is running on this data directory", file=sys.stderr)
+                    return EXIT_FAILED
+                done = rebuild(conn, args.data, Identity.current())
+            print(
+                f"rebuilt {done.runs} runs: events {done.events_before} -> {done.events_after} "
+                f"({done.events_changed_runs} runs changed), "
+                f"{done.outputs_rewritten} outputs re-sanitized"
+            )
+            return EXIT_OK
+        planned = plan(catalog)
+        if args.collect_command == "plan":
+            for run in planned:
+                print(f"{'done' if is_collected(conn, run.trace_id) else 'todo'}  {run.trace_id}")
+            return EXIT_OK
+        return _collect_run(args, conn, planned)
+    finally:
+        conn.close()
+
+
+def _collect_run(
+    args: argparse.Namespace, conn: sqlite3.Connection, planned: Sequence[PlannedRun]
+) -> int:
+    agent = Agent(args.agent)
+    only = set(args.only)
+    todo = [
+        run
+        for run in planned
+        if run.agent is agent
+        and (not only or run.scenario.id in only)
+        and not is_collected(conn, run.trace_id)
+    ][: args.limit]
+    host = Host.detect(args.toolenv.resolve() if args.toolenv else None)
+    version = agent_version(agent)
+    print(f"{len(todo)} runs to collect with {version}", flush=True)
+    args.data.mkdir(parents=True, exist_ok=True)
+    # One collector per data directory: two would run the same scenario twice.
+    with (args.data / "collect.lock").open("w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print("rootsh: another collection is running on this data directory", file=sys.stderr)
+            return EXIT_FAILED
+        proxy: keyproxy.KeyProxy | None = None
+        backend: Backend | None = None
+        if agent is Agent.OPENCODE and todo:
+            if not args.model.startswith("nvidia/"):
+                print("rootsh: OpenCode collection uses NVIDIA NIM models only", file=sys.stderr)
+                return EXIT_FAILED
+            api_key = os.environ.get(NVIDIA_KEY_ENV, "")
+            if not api_key.strip():
+                print(f"rootsh: set {NVIDIA_KEY_ENV} in this shell first", file=sys.stderr)
+                return EXIT_FAILED
+            proxy = keyproxy.start(api_key)
+            backend = Backend(args.model, proxy.base_url, proxy.access_token, proxy.port)
+        try:
+            return _collect_loop(todo, host, args.data, conn, version, agent, backend)
+        finally:
+            if proxy is not None:
+                stats = proxy.stats
+                print(
+                    f"key proxy: {stats.forwarded} forwarded, {stats.refused} refused, "
+                    f"{stats.dropped} client hang-ups",
+                    flush=True,
+                )
+                proxy.stop()
+
+
+def _collect_loop(
+    todo: Sequence[PlannedRun],
+    host: Host,
+    data: Path,
+    conn: sqlite3.Connection,
+    version: str,
+    agent: Agent,
+    backend: Backend | None,
+) -> int:
+    for index, run in enumerate(todo, start=1):
+        if agent is Agent.CLAUDE_CODE and budget_left(conn) < CLAUDE_RUN_CAP_USD:
+            print(f"stopping: Claude Code budget left ${budget_left(conn):.4f}", flush=True)
+            return EXIT_FAILED
+        try:
+            summary = collect(run, host, data, conn, version, backend)
+        except CollectionStopError as exc:
+            print(f"stopping: {exc}", flush=True)
+            return EXIT_FAILED
+        print(f"[{index}/{len(todo)}] {summary}", flush=True)
+    return EXIT_OK
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        if args.command == "collect":
+            return _collect(args)
         return _db(args.db_command, DatabaseKind.from_label(args.kind), args.path)
+    except CatalogError as exc:
+        print(f"rootsh: catalog error: {exc}", file=sys.stderr)
+        return EXIT_FAILED
     except (DatabaseKindError, MigrationError, sqlite3.Error) as exc:
         print(f"rootsh: error: {exc}", file=sys.stderr)
         return EXIT_FAILED

@@ -112,7 +112,72 @@ EFFECT_FREE = frozenset(
     }
 )  # fmt: skip
 
+# --- accounts, file capabilities, mounts (P4 gold traces: injected escalations) ---
+# Options from `usermod --help` (shadow-utils) and `mount --help` (util-linux)
+# on the host, and setcap's usage line (libcap) [RUN].
+
+_USERMOD = Spec.of(
+    "cdefgGlpPRsuvVwWZ",
+    ["comment", "home", "expiredate", "inactive", "gid", "groups", "login", "password",
+     "prefix", "root", "shell", "uid", "add-subuids", "del-subuids", "add-subgids",
+     "del-subgids", "selinux-user", "selinux-range"],
+)  # fmt: skip
+
+
+def usermod(inv: Invocation) -> Outcome:
+    """Changes an account's groups, shell, password or UID: a permission
+    change on the account itself (target: the login)."""
+    p = parse(inv.args, _USERMOD)
+    if p.has("h", "help") or not p.positionals:
+        return Outcome()
+    login = p.positionals[-1]
+    return Outcome([effect(K.PERMISSION, login.text, inv, dynamic=login.dynamic)])
+
+
+_SETCAP_FLAGS = frozenset({"-f", "-q", "-v", "-h", "--license"})
+
+
+def setcap(inv: Invocation) -> Outcome:
+    """`setcap [opts] (caps|-r|-) FILE [(caps|-r|-) FILE ...]`: each FILE's
+    capabilities change. `-v` only verifies."""
+    args = list(inv.args)
+    verify = False
+    while args and not args[0].dynamic and args[0].text in _SETCAP_FLAGS | {"-n"}:
+        option = args.pop(0).text
+        if option in ("-h", "--license"):
+            return Outcome()
+        verify = verify or option == "-v"
+        if option == "-n" and args:
+            args.pop(0)
+    if verify:
+        return Outcome()
+    return Outcome(files(K.PERMISSION, args[1::2], inv))
+
+
+_MOUNT = Spec.of(
+    "TOoNtLU",
+    ["fstab", "options", "test-opts", "types", "source", "target", "target-prefix",
+     "namespace", "label", "uuid", "map-groups", "map-users", "options-mode",
+     "options-source"],
+)  # fmt: skip
+
+
+def mount(inv: Invocation) -> Outcome:
+    """Listing (`mount`, `mount -l`, `mount -t ext4`) and a dry run (`-f`) have
+    no effect; otherwise the mount point's contents change."""
+    p = parse(inv.args, _MOUNT)
+    if p.has("h", "help", "V", "version", "f", "fake"):
+        return Outcome()
+    if p.has("a", "all"):
+        return Outcome([effect(K.WRITE, "/", inv, detail="config")])
+    targets = p.values.get("target") or p.positionals[-1:]
+    return Outcome(files(K.WRITE, targets, inv, recursive=True, detail="config"))
+
+
 CATALOG: Mapping[str, Handler] = {
+    "usermod": usermod,
+    "setcap": setcap,
+    "mount": mount,
     "kill": _signal(Spec.of("sn", ["signal"])),
     "pkill": _signal(Spec.of("sugUGPtF", ["signal", "euid", "uid", "group", "parent", "terminal"])),
     "killall": _signal(Spec.of("suoyn", ["signal", "user", "older-than", "younger-than"])),

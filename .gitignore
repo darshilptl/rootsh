@@ -22,5 +22,5 @@ traces/
 # Raw output of research probes
 research/**/out/
 
-# Third-party corpora: downloaded locally, never committed
-data/external/
+# Local data: corpora, research DBs, raw traces, agent output (AGENTS.md §6)
+data/
