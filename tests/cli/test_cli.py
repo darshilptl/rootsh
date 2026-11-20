@@ -69,7 +69,13 @@ def test_wrong_kind_is_an_error(tmp_path: Path, capsys: pytest.CaptureFixture[st
 def test_newer_database_is_reported(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     db = tmp_path / "r.db"
     conn = open_database(db, DatabaseKind.RUNTIME)
-    migrate(conn, (*RUNTIME, Migration(2, "future", "CREATE TABLE future (x INTEGER) STRICT;")))
+    migrate(
+        conn,
+        (
+            *RUNTIME,
+            Migration(len(RUNTIME) + 1, "future", "CREATE TABLE future (x INTEGER) STRICT;"),
+        ),
+    )
     conn.close()
     code, out, _ = run(capsys, "db", "status", "runtime", str(db))
     assert code == EXIT_FAILED

@@ -54,6 +54,31 @@ CREATE TABLE events (
 CREATE INDEX events_by_turn ON events (session_key, turn_id);
 """,
     ),
+    Migration(
+        2,
+        "decisions",
+        """
+-- One row per tool_pre decision (design 07 §7).
+CREATE TABLE decisions (
+    id            TEXT PRIMARY KEY,
+    session_key   TEXT NOT NULL REFERENCES sessions (key),
+    seq           INTEGER NOT NULL,
+    decision      TEXT NOT NULL CHECK (decision IN ('allow', 'ask', 'block')),
+    layer         TEXT NOT NULL CHECK (layer IN
+                      ('failure', 'defense', 'untrusted', 'read_only', 'project_edit', 'model')),
+    reasons_json  TEXT NOT NULL,
+    features_json TEXT NOT NULL,
+    risk          REAL,
+    model_sha256  TEXT,
+    channel       TEXT NOT NULL CHECK (channel IN ('native', 'desktop')),
+    answer        TEXT CHECK (answer IS NULL OR answer IN ('allow', 'block')),
+    answer_detail TEXT,
+    decided_at    TEXT NOT NULL,
+    latency_ms    REAL NOT NULL,
+    FOREIGN KEY (session_key, seq) REFERENCES events (session_key, seq)
+) STRICT;
+""",
+    ),
 )
 
 RESEARCH: tuple[Migration, ...] = (

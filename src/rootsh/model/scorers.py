@@ -56,14 +56,17 @@ class Lgbm:
     text: str  # LightGBM native model
 
     def scores(self, steps: Sequence[Step]) -> list[float]:
+        return self.score_rows([vector(s, self.names) for s in steps])
+
+    def score_rows(self, rows: Sequence[Sequence[float]]) -> list[float]:
+        """Raw scores for plain feature rows, in the order of `self.names`."""
         import lightgbm
         import numpy
 
-        if not steps:
+        if not rows:
             return []
         booster = lightgbm.Booster(model_str=self.text)
-        rows = numpy.asarray([vector(s, self.names) for s in steps], dtype=float)
-        return [float(p) for p in booster.predict(rows)]
+        return [float(p) for p in booster.predict(numpy.asarray(rows, dtype=float))]
 
     def dump(self) -> str:
         return self.text

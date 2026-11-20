@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import dataclass
+from datetime import datetime
 
-from rootsh.events import AgentEvent, EventKind, canonical_json
+from rootsh.events import Agent, AgentEvent, EventKind, Tool, canonical_json
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,3 +86,31 @@ def ingest(conn: sqlite3.Connection, event: AgentEvent) -> IngestResult:
     if event_id is None:  # an INSERT always sets it; guard for the type checker
         raise RuntimeError("insert did not return a row id")
     return IngestResult(event_id, int(seq), turn_id, duplicate=False)
+
+
+def load_session(conn: sqlite3.Connection, agent: Agent, session_id: str) -> list[AgentEvent]:
+    """A session's stored events in order, as delivered (the daemon replays
+    them after a restart to rebuild its provenance index)."""
+    rows = conn.execute(
+        "SELECT kind, turn_id, tool_call_id, tool, tool_raw, args_json, text, truncated, cwd, "
+        "received_at, raw_sha256 FROM events WHERE session_key = ? ORDER BY seq",
+        (f"{agent}:{session_id}",),
+    ).fetchall()
+    return [
+        AgentEvent(
+            agent=agent,
+            kind=EventKind(kind),
+            session_id=session_id,
+            turn_id=turn,
+            tool_call_id=call,
+            tool=None if tool is None else Tool(tool),
+            tool_raw=raw_tool,
+            args=json.loads(args),
+            text=text,
+            truncated=bool(truncated),
+            cwd=cwd,
+            received_at=datetime.fromisoformat(at),
+            raw_sha256=digest,
+        )
+        for kind, turn, call, tool, raw_tool, args, text, truncated, cwd, at, digest in rows
+    ]

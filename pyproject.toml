@@ -1,6 +1,6 @@
 [project]
 name = "rootsh"
-version = "0.6.0"
+version = "0.7.0"
 description = "Defense layer for host-level coding agents (Claude Code, OpenCode)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -47,7 +47,7 @@ mypy_path = "src:tests"
 explicit_package_bases = true
 
 [[tool.mypy.overrides]]
-module = ["sklearn", "sklearn.*"]
+module = ["sklearn", "sklearn.*", "gi", "gi.*"]  # gi: system Python only (notify helper)
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

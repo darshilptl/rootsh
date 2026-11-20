@@ -55,15 +55,19 @@ def _claim_or_check(conn: sqlite3.Connection, kind: DatabaseKind, *, create: boo
     raise DatabaseKindError(f"not a rootsh database (application_id {found:#x})")
 
 
-def open_database(path: Path, kind: DatabaseKind, *, create: bool = True) -> sqlite3.Connection:
+def open_database(
+    path: Path, kind: DatabaseKind, *, create: bool = True, threads: bool = False
+) -> sqlite3.Connection:
     """Open a rootsh database. Transactions are explicit (autocommit mode).
 
     With create=False a missing or empty file is an error instead of a new
-    database, so read-only callers never initialize one by accident.
+    database, so read-only callers never initialize one by accident. With
+    threads=True the connection may be used from several threads; the caller
+    must serialize access (the daemon holds one lock around it).
     """
     if not create and not path.exists():
         raise DatabaseKindError(f"{path} does not exist")
-    conn = sqlite3.connect(path, isolation_level=None)
+    conn = sqlite3.connect(path, isolation_level=None, check_same_thread=not threads)
     try:
         for pragma in _PRAGMAS:
             conn.execute(pragma)

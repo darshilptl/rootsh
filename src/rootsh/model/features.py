@@ -13,10 +13,10 @@ from dataclasses import dataclass
 
 from rootsh.collect.sandbox import WORKDIR
 from rootsh.collect.store import SANITIZED_HOME
-from rootsh.effects import Effect, EffectKind
+from rootsh.effects import Analysis, Effect, EffectKind
 from rootsh.hoststate.sensitivity import classify
 from rootsh.labels.steps import Step
-from rootsh.provenance import Source
+from rootsh.provenance import Provenance, Source
 
 # Paths an agent may touch without leaving its task (the sandbox maps both).
 WORKSPACE_ROOTS = (WORKDIR, "/tmp")  # noqa: S108 - a path compared, never opened
@@ -72,33 +72,42 @@ def _destructive(effect: Effect) -> bool:
     )
 
 
-def _paths(effect: Effect) -> list[str]:
+def paths(effect: Effect) -> list[str]:
     paths = [effect.target, *([effect.dest] if effect.dest else [])]
     return [p for p in paths if p.startswith("/")]
 
 
-def _inside_workspace(path: str) -> bool:
-    return any(path == root or path.startswith(root + "/") for root in WORKSPACE_ROOTS)
+def inside(path: str, roots: tuple[str, ...]) -> bool:
+    return any(path == root or path.startswith(root.rstrip("/") + "/") for root in roots)
 
 
-def _classes(effects: list[Effect]) -> set[str]:
-    return {c for e in effects for p in _paths(e) for c in classify(p, SANITIZED_HOME)}
+def _classes(effects: list[Effect], home: str) -> set[str]:
+    return {c for e in effects for p in paths(e) for c in classify(p, home)}
 
 
 def features(step: Step) -> Mapping[str, float]:
-    effects = list(step.analysis.effects)
+    """Features of a gold step (sanitized paths: workspace `/work`, home `/home/u`)."""
+    return values(step.analysis, step.provenance, roots=WORKSPACE_ROOTS, home=SANITIZED_HOME)
+
+
+def values(
+    analysis: Analysis, provenance: Provenance, *, roots: tuple[str, ...], home: str
+) -> Mapping[str, float]:
+    """The feature values for any action: the daemon passes the real project
+    root and home, the gold set the sanitized ones."""
+    effects = list(analysis.effects)
     reads = [e for e in effects if e.kind is EffectKind.READ]
     others = [e for e in effects if e.kind is not EffectKind.READ]
-    arguments = [a for a in step.provenance.arguments if a.kind is not EffectKind.READ]
+    arguments = [a for a in provenance.arguments if a.kind is not EffectKind.READ]
     user = sum(Source.USER in a.best for a in arguments)
     return {
         "impact": float(max((effect_level(e) for e in effects), default=0)),
         "destructive": float(min(sum(_destructive(e) for e in effects), DESTRUCTIVE_CAP)),
         "recursive": float(any(_destructive(e) and (e.recursive or e.glob) for e in effects)),
-        "opaque": float(min(len(step.analysis.opaque), OPAQUE_CAP)),
-        "sensitive_write": float(len(_classes(others))),
-        "sensitive_read": float(len(_classes(reads))),
-        "outside": float(len({p for e in effects for p in _paths(e) if not _inside_workspace(p)})),
+        "opaque": float(min(len(analysis.opaque), OPAQUE_CAP)),
+        "sensitive_write": float(len(_classes(others, home))),
+        "sensitive_read": float(len(_classes(reads, home))),
+        "outside": float(len({p for e in effects for p in paths(e) if not inside(p, roots)})),
         "fabricated": float(sum(a.fabricated for a in arguments)),
         "content_only": float(sum(a.content_only for a in arguments)),
         "user_backed": user / len(arguments) if arguments else 0.0,

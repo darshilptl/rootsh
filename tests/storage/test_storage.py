@@ -79,11 +79,14 @@ def test_kind_labels_round_trip(kind: DatabaseKind) -> None:
 
 # --- migrations ---------------------------------------------------------------
 
+ALL_RUNTIME = tuple(range(1, len(RUNTIME) + 1))
+NEXT = len(RUNTIME) + 1
+
 
 @pytest.mark.parametrize(
     ("kind", "expected", "versions"),
     [
-        (DatabaseKind.RUNTIME, {"sessions", "events"}, [1]),
+        (DatabaseKind.RUNTIME, {"sessions", "events", "decisions"}, [1, 2]),
         (
             DatabaseKind.RESEARCH,
             {
@@ -117,12 +120,12 @@ def test_edited_migration_is_refused_and_nothing_applies(runtime_db: sqlite3.Con
     edited = (Migration(1, "sessions_events", RUNTIME[0].sql + "\n-- edited"),)
     with pytest.raises(MigrationError, match="differs"):
         migrate(runtime_db, edited)
-    assert status(runtime_db, RUNTIME).applied == (1,)
-    assert tables(runtime_db) == {"schema_migrations", "sessions", "events"}
+    assert status(runtime_db, RUNTIME).applied == ALL_RUNTIME
+    assert tables(runtime_db) == {"schema_migrations", "sessions", "events", "decisions"}
 
 
 def test_newer_database_is_refused(runtime_db: sqlite3.Connection) -> None:
-    newer = (*RUNTIME, Migration(2, "future", "CREATE TABLE future (x INTEGER) STRICT;"))
+    newer = (*RUNTIME, Migration(NEXT, "future", "CREATE TABLE future (x INTEGER) STRICT;"))
     migrate(runtime_db, newer)
     with pytest.raises(MigrationError, match="newer"):
         migrate(runtime_db, RUNTIME)
@@ -133,13 +136,13 @@ def test_failed_migration_rolls_back_completely(runtime_db: sqlite3.Connection) 
     broken = (
         *RUNTIME,
         Migration(
-            2, "half", "CREATE TABLE half (x INTEGER) STRICT; INSERT INTO nowhere VALUES (1);"
+            NEXT, "half", "CREATE TABLE half (x INTEGER) STRICT; INSERT INTO nowhere VALUES (1);"
         ),
     )
-    with pytest.raises(MigrationError, match="migration 2 failed"):
+    with pytest.raises(MigrationError, match=f"migration {NEXT} failed"):
         migrate(runtime_db, broken)
     assert "half" not in tables(runtime_db)
-    assert status(runtime_db, broken).pending == (2,)
+    assert status(runtime_db, broken).pending == (NEXT,)
     assert not runtime_db.in_transaction
 
 
@@ -272,4 +275,4 @@ def test_a_migration_applied_by_another_process_is_skipped(runtime_db: sqlite3.C
     # migrate() re-reads the ledger under the write lock; a version applied by a
     # concurrent migrator is skipped instead of failing on "table exists".
     assert _apply(runtime_db, RUNTIME[0]) is False
-    assert status(runtime_db, RUNTIME).applied == (1,)
+    assert status(runtime_db, RUNTIME).applied == ALL_RUNTIME

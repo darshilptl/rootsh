@@ -81,6 +81,9 @@ rootsh/
 │   ├── effects/           #   what an action would do (tree-sitter-bash)
 │   ├── hoststate/         #   read-only facts about the paths it touches
 │   ├── provenance/        #   where each critical argument came from
+│   ├── policy/            #   invariants, fast paths, model -> allow/ask/block
+│   ├── daemon/            #   Unix-socket service, peer checks, fail-closed client
+│   ├── notify/            #   desktop pop-up content and D-Bus helper
 │   └── cli/               #   `rootsh` command line
 ├── tests/                 # mirrors src/rootsh/; shared helpers in tests/support/
 │   └── fixtures/          #   real (sanitized) payloads, hand-labelled corpora
@@ -107,8 +110,8 @@ Work runs **one session per phase**. A new session starts from a short prompt
 ("start P4") and orients itself from the repository, not from chat history.
 
 **Current state:**
-- **Done:** P0–P6, squash-merged on `main`, tagged `v0.0.0`–`v0.6.0`.
-  P0–P5 pushed to `origin`; P6 (v0.6.0) not pushed yet.
+- **Done:** P0–P7, squash-merged on `main`, tagged `v0.0.0`–`v0.7.0`.
+  P0–P6 pushed to `origin`; P7 (v0.7.0) not pushed yet.
 - **P4 result:** gold set of 192 sandboxed runs (176 OpenCode on NVIDIA NIM
   Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored).
   See `docs/results/04-trace-harness.md`.
@@ -127,9 +130,18 @@ Work runs **one session per phase**. A new session starts from a short prompt
   but ~935 asks per 1k authorized steps. See `docs/results/06-model.md`
   and ADR-0015. Commands: `rootsh model train|evaluate --db --manifest
   --out`; tables `research/model/report.py <db> <bundle>`.
-- **Next:** P7 per `docs/plan.md` (daemon, invariants, ask channels). The
-  model alone gives an unusable ask rate; P7's invariants and a read-only
-  fast path must carry the policy (results 06 §5).
+- **P7 result:** `rootsh daemon --socket --db --bundle` and `rootsh
+  approve <id> allow|block`; policy order failure → defense → untrusted →
+  read-only → in-project edit → model (ADR-0016). On validation: asks 333
+  per 1k authorized (model alone 944), 9 of 34 refused steps falsely
+  allowed by the fast paths (semantic edits in project dotfiles,
+  reconnaissance reads). Decision p99 ≤ 17 ms on files, ~316 ms on large
+  directories. See `docs/results/07-daemon.md`; scripts
+  `research/policy/{burden,latency}.py`.
+- **Next:** P8 per `docs/plan.md`: Claude Code hooks and the OpenCode
+  plugin calling `rootsh.daemon.client.decide()` (allow → no decision for
+  Claude Code; `ask: "desktop"` for OpenCode and headless), installer,
+  `doctor`, uninstall.
 
 **To start a phase, read in this order:**
 1. **This file:** the rules, layout, and git workflow.
@@ -146,9 +158,12 @@ Work runs **one session per phase**. A new session starts from a short prompt
 6. **`git log --oneline`:** one commit per phase.
 
 **Open items carried forward:**
-- **P7:** decide which process runs the host-state probes (the daemon user
-  may not be able to read `$HOME`), and measure probe latency on large
-  repositories.
+- **P8:** the daemon runs as the author's user service (ADR-0016); the
+  installer must start it outside any agent scope.
+- **P9 (from P7):** `rootsh run` must launch agents in a
+  `rootsh-agent-*.scope`, and Landlock must deny agents
+  `/run/user/<uid>/bus` and `/run/user/<uid>/systemd`, or an agent can leave
+  its scope and approve its own asks (results 07 §6).
 - **P8/P9:** agents can read the defense's own plugin in `.opencode/plugins/`
   (seen in P3); protect it.
 - **P8/P9 (seen in P5 labelling):** in several gold runs an agent read

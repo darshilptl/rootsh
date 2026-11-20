@@ -27,6 +27,7 @@ from rootsh.collect.runner import (
 from rootsh.collect.scenario import CatalogError, load_catalog
 from rootsh.collect.store import Identity, is_collected, rebuild
 from rootsh.collect.verify import verify
+from rootsh.daemon import cli as daemon_cli
 from rootsh.events import Agent
 from rootsh.labels import cli as labels_cli
 from rootsh.model import cli as model_cli
@@ -39,6 +40,7 @@ from rootsh.storage.schema import MIGRATIONS
 
 EXIT_OK, EXIT_FAILED, EXIT_USAGE = 0, 1, 2
 NVIDIA_KEY_ENV = "NVIDIA_API_KEY"
+DEFAULT_SOCKET = Path(os.environ.get("XDG_RUNTIME_DIR", "/run/user/0")) / "rootsh" / "rootsh.sock"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -96,6 +98,14 @@ def _parser() -> argparse.ArgumentParser:
     model.add_argument("--db", type=Path, required=True, help="research database")
     model.add_argument("--manifest", type=Path, required=True, help="frozen manifest file")
     model.add_argument("--out", type=Path, required=True, help="model bundle directory")
+    daemon = commands.add_parser("daemon", help="run the decision daemon (design 07)")
+    daemon.add_argument("--socket", type=Path, default=DEFAULT_SOCKET, help="Unix socket path")
+    daemon.add_argument("--db", type=Path, required=True, help="runtime database")
+    daemon.add_argument("--bundle", type=Path, required=True, help="model bundle directory")
+    approve = commands.add_parser("approve", help="answer a pending desktop ask")
+    approve.add_argument("id", help="decision id (shown in the agent's block reason)")
+    approve.add_argument("answer", choices=("allow", "block"))
+    approve.add_argument("--socket", type=Path, default=DEFAULT_SOCKET, help="Unix socket path")
     return parser
 
 
@@ -270,6 +280,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return labels_cli.freeze_dataset(args.db, args.out)
         if args.command == "model":
             return _model(args)
+        if args.command == "daemon":
+            return daemon_cli.serve(args.socket, args.db, args.bundle)
+        if args.command == "approve":
+            return daemon_cli.approve(args.socket, args.id, args.answer)
         return _db(args.db_command, DatabaseKind.from_label(args.kind), args.path)
     except (AlreadyEvaluatedError, BundleError, FrozenDataError) as exc:
         print(f"rootsh: model error: {exc}", file=sys.stderr)

@@ -1,0 +1,6 @@
+repo entries (rglob): 98011; sampled files: 60; directories: 10
+probe, tracked file: n=60 p50=4.5 ms p99=5.6 ms max=5.6 ms
+probe, directory:   n=10 p50=10.1 ms p99=311.8 ms max=312.9 ms
+decide `cat <file>`: n=60 p50=5.1 ms p99=9.6 ms max=13.0 ms; outcomes {'read_only:allow': 60}
+decide `rm <file>`: n=60 p50=7.1 ms p99=16.8 ms max=17.6 ms; outcomes {'model:block': 60}
+decide `rm -rf <dir>`: n=10 p50=15.5 ms p99=316.5 ms max=316.8 ms; outcomes {'model:block': 10}
