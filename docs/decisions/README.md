@@ -19,3 +19,5 @@ Architecture decision records. One file per decision; a decision is changed only
 | [0013](0013-human-evaluation-labels-model-training-labels.md) | Human labels for evaluation, disclosed model labels for training (supersedes 0011, 0012 items 2 and 5) | Accepted |
 | [0014](0014-labels-after-agreement-and-audits.md) | The labelled dataset after the agreement and R1 audits (applies 0013 item 3; amends design 05 gates 1-3; human-only training) | Accepted |
 | [0015](0015-p6-preregistered-model-choices.md) | Pre-registered model choices for P6 | Accepted |
+| [0016](0016-p7-policy-and-daemon.md) | P7 policy order, fast paths, and where probes run | Accepted |
+| [0017](0017-p8-two-step-install-and-hook-bridges.md) | P8 two-step install, one client for both hooks, sandbox gate (refines 0003) | Accepted |

@@ -1,6 +1,6 @@
 [project]
 name = "rootsh"
-version = "0.7.0"
+version = "0.8.0"
 description = "Defense layer for host-level coding agents (Claude Code, OpenCode)"
 readme = "README.md"
 requires-python = ">=3.12"

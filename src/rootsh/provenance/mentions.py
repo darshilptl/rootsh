@@ -8,7 +8,10 @@ import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
-_URL = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://[^\s'\"`<>()\[\]{}]+")
+# The scheme is bounded: unbounded, every start inside a long run of letters
+# rescans the run, which is quadratic (60k chars took 5 s in the daemon, P8).
+# Over all 44,089 strings of the 192 gold traces the bound changes no match.
+_URL = re.compile(r"[A-Za-z][A-Za-z0-9+.-]{0,31}://[^\s'\"`<>()\[\]{}]+")
 _SPLIT = re.compile(r"[\s'\"`<>|;,()\[\]{}=]+")
 _FILENAME = re.compile(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*\.[A-Za-z0-9]{1,8}")
 _HOST = re.compile(r"(?:[a-z0-9-]+\.)+[a-z]{2,}|\d{1,3}(?:\.\d{1,3}){3}")

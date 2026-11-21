@@ -8,12 +8,18 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from rootsh.model.bundle import read
-from rootsh.policy import Model, model_from_bundle
+if TYPE_CHECKING:
+    from rootsh.policy import Model
 
 
 def load_model(bundle_dir: Path) -> tuple[Model | None, str | None]:
+    # Imported here, not at module level: hook commands import
+    # rootsh.daemon.client and must not pay for the model stack (P8).
+    from rootsh.model.bundle import read
+    from rootsh.policy import model_from_bundle
+
     try:
         model = model_from_bundle(read(bundle_dir))
         # Score once now: LightGBM's first import costs ~1.8 s (results 07 §3),

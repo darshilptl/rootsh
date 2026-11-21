@@ -29,6 +29,7 @@ from rootsh.collect.store import Identity, is_collected, rebuild
 from rootsh.collect.verify import verify
 from rootsh.daemon import cli as daemon_cli
 from rootsh.events import Agent
+from rootsh.install import cli as install_cli
 from rootsh.labels import cli as labels_cli
 from rootsh.model import cli as model_cli
 from rootsh.model.bundle import BundleError
@@ -106,6 +107,7 @@ def _parser() -> argparse.ArgumentParser:
     approve.add_argument("id", help="decision id (shown in the agent's block reason)")
     approve.add_argument("answer", choices=("allow", "block"))
     approve.add_argument("--socket", type=Path, default=DEFAULT_SOCKET, help="Unix socket path")
+    install_cli.add_parsers(commands)
     return parser
 
 
@@ -284,6 +286,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return daemon_cli.serve(args.socket, args.db, args.bundle)
         if args.command == "approve":
             return daemon_cli.approve(args.socket, args.id, args.answer)
+        if args.command in ("install", "uninstall", "doctor"):
+            return install_cli.run(args)
         return _db(args.db_command, DatabaseKind.from_label(args.kind), args.path)
     except (AlreadyEvaluatedError, BundleError, FrozenDataError) as exc:
         print(f"rootsh: model error: {exc}", file=sys.stderr)

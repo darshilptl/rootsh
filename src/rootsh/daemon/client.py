@@ -55,3 +55,18 @@ def decide(
     if reply.get("decision") not in DECISIONS or not isinstance(reply.get("reasons"), list):
         return _blocked(f"malformed reply {str(reply)[:200]}")
     return reply
+
+
+def record(path: Path, agent: str, hook: str, payload: object) -> str | None:
+    """Send a non-tool-call event (prompt, tool output) for the record.
+
+    Returns None when the daemon stored it, else the reason it did not; never
+    raises. Callers decide what a lost record means for their agent."""
+    body = {"op": "event", "agent": agent, "hook": hook, "payload": payload}
+    try:
+        reply = request(path, body)
+    except (OSError, ValueError) as exc:
+        return f"daemon unreachable ({type(exc).__name__}: {exc})"
+    if reply != {"ok": True}:
+        return f"not recorded: {str(reply)[:200]}"
+    return None
