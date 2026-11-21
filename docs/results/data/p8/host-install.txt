@@ -1,0 +1,65 @@
+# P8 host install cycle on the author's machine, 2026-11-21 [RUN]
+# Outputs as printed; home path sanitized to /home/u. Repo at v0.8.0 (e775307).
+
+## 1. rootsh install (author)
+Created symlink '/home/u/.config/systemd/user/default.target.wants/rootsh-daemon.service' → '/home/u/.config/systemd/user/rootsh-daemon.service'.
+bundle 9d317325fd7b -> /home/u/.local/share/rootsh/models/9d317325fd7b
+unit /home/u/.config/systemd/user/rootsh-daemon.service
+plugin /home/u/.config/opencode/plugins/rootsh/index.ts
+daemon up on /run/user/1000/rootsh/rootsh.sock
+
+## 2. systemctl --user show rootsh-daemon.service
+ActiveState=active SubState=running NRestarts=0
+
+## 3. sudo .venv/bin/rootsh install --system
+managed settings /etc/claude-code/managed-settings.json: written
+hook: '/home/u/Desktop/Vs Project/Development/rootsh/.venv/bin/python' -I -m rootsh.hooks.claude_code --socket /run/user/1000/rootsh/rootsh.sock
+
+## 4. rootsh doctor (exit 0)
+PASS  daemon unit: /home/u/.config/systemd/user/rootsh-daemon.service matches install
+PASS  opencode plugin: /home/u/.config/opencode/plugins/rootsh/index.ts matches install
+PASS  opencode plugin errors: none logged
+PASS  daemon service: rootsh-daemon.service
+PASS  daemon answers with installed model: 9d317325fd7b09aa4162828145601805c042babab621aab64ef29a81600a4b75
+PASS  managed settings owner: uid 0, mode 644
+PASS  managed settings hooks: 4 events, onFailure block
+PASS  hook interpreter: /home/u/Desktop/Vs Project/Development/rootsh/.venv/bin/python
+PASS  claude hook records prompt: exit 0
+PASS  claude hook blocks defense write: {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "rootsh blocked this (defense): write on a defense file: /home/u/.claude/settings
+PASS  claude hook stays silent on a read: exit 0
+PASS  opencode bridge blocks defense write: {"decision": "block", "reason": "rootsh blocked this (defense): write on a defense file: /home/u/.claude/settings.json"}
+PASS  opencode bridge allows a read: {"decision": "allow"}
+PASS  landlock ABI (P9): ABI 8
+
+## 5. stat /etc/claude-code /etc/claude-code/managed-settings.json
+root 755 /etc/claude-code
+root 644 /etc/claude-code/managed-settings.json
+
+## 6. Session started before install: decisions outside doctor's sessions
+[]
+
+## 7. sudo .venv/bin/rootsh install --system (second time)
+managed settings /etc/claude-code/managed-settings.json: already current
+rootsh entries per event: {'UserPromptSubmit': 1, 'PreToolUse': 1, 'PostToolUse': 1, 'PostToolUseFailure': 1}; top-level keys: ['hooks']
+
+## 8. sudo .venv/bin/rootsh uninstall --system
+rootsh hooks removed from /etc/claude-code/managed-settings.json
+ls /etc/claude-code /var/lib/rootsh: No such file or directory (both)
+
+## 9. rootsh doctor after the system uninstall
+8 PASS, 1 FAIL: managed settings: /etc/claude-code/managed-settings.json missing
+
+## 10. rootsh uninstall (author)
+Removed '/home/u/.config/systemd/user/default.target.wants/rootsh-daemon.service'.
+daemon stopped and disabled
+removed 8 files
+
+## 11. Afterwards
+gone: ~/.config/systemd/user/rootsh-daemon.service, ~/.config/opencode/plugins,
+      ~/.local/share/rootsh, ~/.local/state/rootsh, /run/user/1000/rootsh, /etc/claude-code
+systemctl --user: inactive, not-found
+~/.config/opencode: cli.json opencode.json service.json (as before install)
+~/.config/systemd/user: default.target.wants timers.target.wants (as before install)
+
+## 12. rootsh uninstall (second time)
+rootsh uninstall: no install manifest at /home/u/.local/state/rootsh/install.json; nothing to uninstall

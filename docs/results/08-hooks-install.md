@@ -148,9 +148,31 @@ What the runs settle:
 - **Managed settings are machine-wide**, but the hook names one user's
   socket. Another user's Claude Code would be blocked (uid check), not
   unprotected.
-- **Not run on the real host**: the gate used the sandbox and temp roots
-  (ADR-0017). `sudo rootsh install --system` and live `doctor` on the
-  author's machine are the author's step.
+- **The gate itself ran in the sandbox and on temp roots** (ADR-0017).
+  The host cycle (§6) shows install, doctor and uninstall on the real
+  machine, not agent runs there.
+- **A Claude Code session started before install is not covered**: Claude
+  Code reads hooks at session start (§6, item 6). Restart sessions after
+  `install --system`.
 - The defense's own files (venv, bundle, unit, plugin, DB) are owned by
   the author and writable by an agent running as the author. → P9.
 - OpenCode environment scrubbing (P0 consequence 7) is not done.
+
+## 6. Host install cycle [RUN]
+
+After the merge, the author ran the full cycle on their own machine
+(2026-11-21, v0.8.0). Raw output: `data/p8/host-install.txt`.
+
+| step | result |
+|---|---|
+| `rootsh install` | bundle `9d317325fd7b` copied, unit enabled, daemon up on `/run/user/1000/rootsh/rootsh.sock`; unit active, 0 restarts, with `ProtectSystem=strict` |
+| `sudo rootsh install --system` | managed settings written, root-owned, mode 644 |
+| `rootsh doctor` | **14/14 PASS**, exit 0; the installed Claude Code hook and OpenCode bridge refused a write to `~/.claude/settings.json` at the defense layer and allowed a read |
+| this session's own calls | no decisions: it started before install, and Claude Code reads hooks at session start |
+| `install --system` again | `already current`; one rootsh entry per hook event |
+| `sudo rootsh uninstall --system` | hooks removed; `/etc/claude-code` and `/var/lib/rootsh` gone (neither existed before) |
+| `rootsh uninstall` | daemon stopped and disabled, 8 files removed; every rootsh path gone, `~/.config/opencode` and `~/.config/systemd/user` as before install |
+| `rootsh uninstall` again | refused: no manifest, nothing touched |
+
+rootsh is **not installed** on the host after this cycle.
+

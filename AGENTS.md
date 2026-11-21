@@ -148,7 +148,8 @@ Work runs **one session per phase**. A new session starts from a short prompt
   Code reported unchanged, 2/5 under the original checks); async throw in
   OpenCode blocks. Fixed a quadratic URL regex in provenance mentions. See
   `docs/results/08-hooks-install.md`; scripts `research/p8-gate/{run_gate,report}.py`.
-  Not installed on the real host (author's step).
+  Host cycle on the author's machine (results 08 §6): install, doctor
+  14/14, idempotent re-install, clean uninstall; currently not installed.
 - **Next:** P9 per `docs/plan.md`: kernel K1–K3 (+ K4 stretch), `rootsh run`
   in a `rootsh-agent-*.scope`, self-protection of rootsh's files.
 
