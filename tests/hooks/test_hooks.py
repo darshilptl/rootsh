@@ -39,6 +39,7 @@ def _service(conn: sqlite3.Connection, home: Path, clicked: Decision) -> Service
         asker=lambda _p, _t: notify.Answer(clicked, f"test clicked {clicked.value}"),
         ask_timeout_s=3,
         cgroup_of=lambda _pid: "0::/user.slice/x.scope\n",
+        require_launch=False,  # P8 hook behaviour; P9 launch tests are in tests/run/
     )
 
 

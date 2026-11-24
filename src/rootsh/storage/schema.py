@@ -79,6 +79,25 @@ CREATE TABLE decisions (
 ) STRICT;
 """,
     ),
+    Migration(
+        3,
+        "launches",
+        f"""
+-- Agents started by `rootsh run` (design 09 §3). A tool call is attributed to
+-- a launch through the caller's cgroup, never through a request field.
+CREATE TABLE launches (
+    id            TEXT PRIMARY KEY CHECK (length(id) = 32),
+    agent         TEXT NOT NULL {_AGENT_CHECK},
+    project       TEXT NOT NULL,
+    home          TEXT NOT NULL,
+    layers_json   TEXT NOT NULL,
+    registered_at TEXT NOT NULL,
+    ended_at      TEXT
+) STRICT;
+
+ALTER TABLE decisions ADD COLUMN launch_id TEXT REFERENCES launches (id);
+""",
+    ),
 )
 
 RESEARCH: tuple[Migration, ...] = (

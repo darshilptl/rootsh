@@ -25,6 +25,7 @@ from rootsh.daemon import load_model
 from rootsh.install import Layout, render
 from rootsh.install.doctor import Check, claude_blocking, doctor
 from rootsh.install.files import InstallError
+from rootsh.kernel import apparmor
 
 HOME = Path("/home/u")
 REAL_BUNDLE = Path(__file__).resolve().parents[2] / "data" / "models" / "p6-a357bba6c02c"
@@ -230,6 +231,33 @@ def test_system_install_then_uninstall_with_no_prior_settings(root: Path) -> Non
     assert snapshot(root) == before
 
 
+def test_system_step_writes_loads_and_removes_the_k2_profile(root: Path) -> None:
+    before = snapshot(root)
+    layout = _layout(root)
+    calls: list[list[str]] = []
+
+    def loader(argv: Sequence[str]) -> int:
+        calls.append(list(argv))
+        return 0
+
+    code = (Path("/opt/x/.venv"),)
+    lines = install.install_system(layout, code, loader)
+    profile = (root / "etc" / "apparmor.d" / "rootsh").read_text()
+    assert 'audit deny "/opt/x/.venv/**" wl,' in profile
+    assert f'audit deny "{layout.control.parent}/**" rwlk,' in profile
+    assert f'audit deny "{layout.state_dir}/**" rwlk,' in profile
+    assert calls == [[apparmor.PARSER, "-r", str(root / "etc" / "apparmor.d" / "rootsh")]]
+    assert lines[-1].startswith("K2 loaded")
+    install.uninstall_system(layout, loader)
+    assert calls[-1][:2] == [apparmor.PARSER, "-R"]
+    assert snapshot(root) == before
+
+
+def test_system_step_fails_when_the_profile_does_not_load(root: Path) -> None:
+    with pytest.raises(InstallError, match="K2 is not loaded"):
+        install.install_system(_layout(root), (), lambda _argv: 1)
+
+
 PRIOR: dict[str, Any] = {
     "permissions": {"deny": ["Bash(curl:*)"]},
     "hooks": {
@@ -364,7 +392,7 @@ def test_unit_passes_systemd_analyze(tmp_path: Path) -> None:
     python.symlink_to(sys.executable)
     unit = tmp_path / render.UNIT_NAME
     sock = Path("/run/user/1000/rootsh/rootsh.sock")
-    unit.write_bytes(render.unit(python, sock, odd / "r.db", odd, odd))
+    unit.write_bytes(render.unit(python, sock, odd / "c.sock", odd / "r.db", odd, odd))
     done = subprocess.run(  # noqa: S603
         ["systemd-analyze", "--user", "verify", str(unit)],  # noqa: S607
         capture_output=True, text=True, check=False,

@@ -21,3 +21,4 @@ Architecture decision records. One file per decision; a decision is changed only
 | [0015](0015-p6-preregistered-model-choices.md) | Pre-registered model choices for P6 | Accepted |
 | [0016](0016-p7-policy-and-daemon.md) | P7 policy order, fast paths, and where probes run | Accepted |
 | [0017](0017-p8-two-step-install-and-hook-bridges.md) | P8 two-step install, one client for both hooks, sandbox gate (refines 0003) | Accepted |
+| [0018](0018-p9-trust-containment-and-service-identity.md) | P9 trust, containment, and per-user service identity (supersedes 0003 system-user choice; refines 0016/0017) | Accepted in part |

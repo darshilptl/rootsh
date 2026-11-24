@@ -9,17 +9,20 @@ model) must be refused, and a harmless read must not be.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shlex
 import subprocess
 import uuid
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from rootsh.daemon import client
 from rootsh.install import Layout, Systemctl, ping, render
 from rootsh.install.files import Changes, InstallError, read_regular, sha256
+from rootsh.kernel import apparmor
 
 RUN_TIMEOUT_S = 40
 Runner = Callable[[Sequence[str], str], subprocess.CompletedProcess[str]]
@@ -241,13 +244,48 @@ def user_checks(layout: Layout, systemctl: Systemctl | None) -> list[Check]:
 
 
 def landlock_check() -> Check:
-    from rootsh.collect.confine import ConfineError, abi_version
+    from rootsh.kernel.landlock import abi_version
 
     try:
         abi = abi_version()
-    except (ConfineError, OSError) as exc:
+    except OSError as exc:
         return Check("landlock ABI (P9)", False, str(exc))
     return Check("landlock ABI (P9)", abi >= 6, f"ABI {abi}")
+
+
+@contextlib.contextmanager
+def in_launch(layout: Layout, agent: str, run: Runner) -> Iterator[Runner]:
+    """A runner whose commands run inside a registered `rootsh-agent-*.scope`,
+    the only place the P9 daemon accepts hook events from (design 09 §3)."""
+    launch_id = uuid.uuid4().hex
+    body = {
+        "op": "register",
+        "launch": launch_id,
+        "agent": agent,
+        "project": str(layout.home),
+        "home": str(layout.home),
+        "layers": ["doctor"],
+    }
+    reply = client.request(layout.control, body, timeout_s=5.0)
+    if reply.get("ok") is not True:
+        raise OSError(f"daemon refused the doctor launch: {reply.get('error')}")
+    scope = ["systemd-run", "--user", "--scope", "--quiet", "--collect"]
+    scope.append(f"--unit=rootsh-agent-{launch_id}")
+    try:
+        yield lambda argv, stdin: run([*scope, "--", *argv], stdin)
+    finally:
+        with contextlib.suppress(OSError, ValueError):
+            client.request(layout.control, {"op": "unregister", "launch": launch_id})
+
+
+def k2_check() -> Check:
+    loaded = apparmor.loaded()
+    installed = apparmor.PROFILE_PATH.exists()
+    if loaded:
+        return Check("apparmor K2 (P9)", True, f"{apparmor.OUTER} loaded")
+    if installed:
+        return Check("apparmor K2 (P9)", False, f"{apparmor.PROFILE_PATH} installed, not loaded")
+    return Check("apparmor K2 (P9)", None, "not installed (sudo rootsh install --system)")
 
 
 def doctor(layout: Layout, systemctl: Systemctl | None, run: Runner = run_command) -> list[Check]:
@@ -255,11 +293,20 @@ def doctor(layout: Layout, systemctl: Systemctl | None, run: Runner = run_comman
     managed, command = managed_checks(layout)
     checks += managed
     live = systemctl is not None
-    if command is not None and live:
-        checks += claude_blocking(command, layout.home, run)
-    elif command is not None:
-        checks.append(Check("claude hook blocking", None, "not run under --root"))
     if live:
-        checks += opencode_blocking(layout, run)
+        reply = ping(layout.control)
+        checks.append(Check("control socket (P9)", reply.get("ok") is True, str(layout.control)))
+    try:
+        if command is not None and live:
+            with in_launch(layout, "claude_code", run) as scoped:
+                checks += claude_blocking(command, layout.home, scoped)
+        elif command is not None:
+            checks.append(Check("claude hook blocking", None, "not run under --root"))
+        if live:
+            with in_launch(layout, "opencode", run) as scoped:
+                checks += opencode_blocking(layout, scoped)
+    except (OSError, ValueError) as exc:
+        checks.append(Check("hook checks inside a launch", False, str(exc)))
     checks.append(landlock_check())
+    checks.append(k2_check())
     return checks

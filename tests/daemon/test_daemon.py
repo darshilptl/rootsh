@@ -17,7 +17,7 @@ from rootsh import notify
 from rootsh.daemon import client, load_model
 from rootsh.daemon.peer import Peer, approval_refusal, in_agent_scope, peer_of
 from rootsh.daemon.server import Server
-from rootsh.daemon.service import Service
+from rootsh.daemon.service import CLAMP_REASON, Service
 from rootsh.model.calibration import Conformal, Decision
 from rootsh.model.features import NAMES
 from rootsh.policy import Model
@@ -53,6 +53,7 @@ def _service(
         asker=asker or (lambda _p, _t: notify.Answer(Decision.BLOCK, "test: no click")),
         ask_timeout_s=timeout,
         cgroup_of=lambda _pid: cgroup,
+        require_launch=False,  # P7 behaviour; P9 launch tests are in tests/run/
     )
 
 
@@ -135,7 +136,10 @@ def test_a_replayed_session_keeps_its_provenance(
     _prompted(_service(runtime_db, project.parent), project, f"Delete {project}/README.md.")
     restarted = _service(runtime_db, project.parent, risk=0.0)  # a daemon restart
     reply = restarted.handle(_pre(project, f"rm {project}/README.md"), ME)
-    assert reply["decision"] == "allow"
+    # The model allowed it (risk 0); since P9 a model allow is asked (ADR-0018).
+    assert reply["decision"] == "ask"
+    assert reply["layer"] == "model"
+    assert CLAMP_REASON in reply["reasons"]
     features = json.loads(runtime_db.execute("SELECT features_json FROM decisions").fetchone()[0])
     assert features["user_backed"] == 1.0
 
@@ -354,7 +358,12 @@ def test_approval_over_the_real_socket_checks_the_real_cgroup(
     sock, svc = served
     # This test process is not in an agent scope, so the real /proc check lets it approve.
     real = Service(
-        runtime_db, _model(0.5), home=str(project.parent), asker=_never_clicked, ask_timeout_s=3
+        runtime_db,
+        _model(0.5),
+        home=str(project.parent),
+        asker=_never_clicked,
+        ask_timeout_s=3,
+        require_launch=False,
     )
     svc_server = Server(sock.with_suffix(".2"), real)
     thread = threading.Thread(target=svc_server.serve_forever, daemon=True)

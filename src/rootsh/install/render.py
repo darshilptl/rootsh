@@ -112,7 +112,9 @@ def systemd_quote(word: str) -> str:
     return '"' + escaped.replace("%", "%%").replace("$", "$$") + '"'
 
 
-def unit(python: Path, socket: Path, db: Path, bundle: Path, state_dir: Path) -> bytes:
+def unit(
+    python: Path, socket: Path, control: Path, db: Path, bundle: Path, state_dir: Path
+) -> bytes:
     """User unit for the daemon. Hardening a user manager can apply without
     privileges; `rootsh doctor` checks the daemon actually runs under it."""
     argv = [
@@ -123,6 +125,8 @@ def unit(python: Path, socket: Path, db: Path, bundle: Path, state_dir: Path) ->
         "daemon",
         "--socket",
         socket,
+        "--control",
+        control,
         "--db",
         db,
         "--bundle",
@@ -145,7 +149,7 @@ RestrictRealtime=yes
 RestrictSUIDSGID=yes
 ProtectSystem=strict
 ReadWritePaths={systemd_quote(str(state_dir))}
-RuntimeDirectory={socket.parent.name}
+RuntimeDirectory={socket.parent.name} {control.parent.name}
 RuntimeDirectoryMode=0700
 
 [Install]

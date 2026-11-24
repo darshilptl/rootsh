@@ -86,7 +86,7 @@ NEXT = len(RUNTIME) + 1
 @pytest.mark.parametrize(
     ("kind", "expected", "versions"),
     [
-        (DatabaseKind.RUNTIME, {"sessions", "events", "decisions"}, [1, 2]),
+        (DatabaseKind.RUNTIME, {"sessions", "events", "decisions", "launches"}, [1, 2, 3]),
         (
             DatabaseKind.RESEARCH,
             {
@@ -121,7 +121,8 @@ def test_edited_migration_is_refused_and_nothing_applies(runtime_db: sqlite3.Con
     with pytest.raises(MigrationError, match="differs"):
         migrate(runtime_db, edited)
     assert status(runtime_db, RUNTIME).applied == ALL_RUNTIME
-    assert tables(runtime_db) == {"schema_migrations", "sessions", "events", "decisions"}
+    expected = {"schema_migrations", "sessions", "events", "decisions", "launches"}
+    assert tables(runtime_db) == expected
 
 
 def test_newer_database_is_refused(runtime_db: sqlite3.Connection) -> None:

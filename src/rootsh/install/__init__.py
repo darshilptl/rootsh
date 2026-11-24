@@ -22,8 +22,10 @@ from pathlib import Path
 from rootsh.daemon import client, load_model
 from rootsh.install import render
 from rootsh.install.files import Changes, InstallError, atomic_write, read_regular, revert, sha256
+from rootsh.kernel import apparmor
 
 Systemctl = Callable[[Sequence[str]], int]
+Loader = Callable[[Sequence[str]], int]  # runs apparmor_parser; None skips it
 MANAGED_SETTINGS = Path("/etc/claude-code/managed-settings.json")
 SYSTEM_STATE = Path("/var/lib/rootsh")
 DB_FILES = ("runtime.db", "runtime.db-wal", "runtime.db-shm", "opencode-plugin-errors.log")
@@ -59,6 +61,11 @@ class Layout:
     @property
     def socket(self) -> Path:
         return self.runtime_dir / "rootsh" / "rootsh.sock"
+
+    @property
+    def control(self) -> Path:
+        """Approvals and launch registration; never bound into a sandbox."""
+        return self.runtime_dir / "rootsh-control" / "control.sock"
 
     @property
     def state_dir(self) -> Path:
@@ -116,8 +123,9 @@ def install_user(layout: Layout, bundle: Path, systemctl: Systemctl | None) -> l
         raise InstallError(
             "run `rootsh install` as yourself, not root (the system step is --system)"
         )
-    if len(os.fsencode(layout.socket)) >= SOCKET_PATH_MAX:
-        raise InstallError(f"socket path {layout.socket} is too long for AF_UNIX")
+    for path in (layout.socket, layout.control):
+        if len(os.fsencode(path)) >= SOCKET_PATH_MAX:
+            raise InstallError(f"socket path {path} is too long for AF_UNIX")
     model, error = load_model(bundle)
     if model is None:
         raise InstallError(f"refusing to install: {error}")
@@ -153,7 +161,9 @@ def _write_user_files(layout: Layout, changes: Changes, bundle: Path, dest: Path
     if copied is None or copied.sha256 != sha:
         raise InstallError(f"bundle copy does not verify: {copy_error}")
     changes.mkdir(layout.at(layout.state_dir), 0o700)
-    unit = render.unit(layout.python, layout.socket, layout.db, dest, layout.state_dir)
+    unit = render.unit(
+        layout.python, layout.socket, layout.control, layout.db, dest, layout.state_dir
+    )
     changes.write(layout.at(layout.unit), unit, 0o644)
     plugin = render.plugin(layout.python, layout.socket, layout.plugin_errors)
     changes.write(layout.at(layout.plugin), plugin, 0o644)
@@ -212,30 +222,65 @@ def _need_root(layout: Layout) -> None:
         raise InstallError("the system step writes /etc/claude-code: run it with sudo")
 
 
-def install_system(layout: Layout) -> list[str]:
+def k2_profile(layout: Layout, code: Sequence[Path]) -> str:
+    """The K2 profile for this install (design 09 §5-§6): rootsh's code,
+    plugin, unit and Claude Code's managed settings read-only; its state,
+    models and control socket hidden."""
+    read_only = [*code, layout.plugin.parent.parent, layout.unit, layout.managed.parent]
+    hidden = [
+        layout.state_dir,
+        layout.models.parent,
+        layout.control.parent,
+        SYSTEM_STATE,
+    ]
+    return apparmor.render(read_only, hidden, layout.home)
+
+
+def install_system(
+    layout: Layout, code: Sequence[Path] = (), loader: Loader | None = None
+) -> list[str]:
+    """Managed settings and, from P9, the K2 AppArmor profile (loaded with
+    `loader`, i.e. apparmor_parser -r; None under --root)."""
     _need_root(layout)
     changes = _changes(layout.at(layout.system_manifest))
     path = layout.at(layout.managed)
     merged = render.merge_managed(read_regular(path), layout.python, layout.socket)
+    profile = k2_profile(layout, code).encode()
+    try:
+        apparmor.check(profile.decode())
+    except (apparmor.AppArmorError, OSError) as exc:
+        raise InstallError(str(exc)) from exc
+    profile_path = layout.at(apparmor.PROFILE_PATH)
     try:
         changes.mkdir(path.parent, 0o755)
         changed = changes.write(path, merged, 0o644)
+        changes.mkdir(profile_path.parent, 0o755)
+        changes.write(profile_path, profile, 0o644)
     finally:
         _save(changes, layout.at(layout.system_manifest), 0o600)
     state = "written" if changed else "already current"
-    return [
+    lines = [
         f"managed settings {layout.managed}: {state}",
         f"hook: {render.hook_command(layout.python, layout.socket)}",
+        f"apparmor profile {apparmor.PROFILE_PATH}: written",
     ]
+    if loader is None:
+        return [*lines, "apparmor_parser skipped (--root)"]
+    if loader([apparmor.PARSER, "-r", str(profile_path)]) != 0:
+        raise InstallError(f"apparmor_parser -r {profile_path} failed; K2 is not loaded")
+    return [*lines, f"K2 loaded: {apparmor.OUTER}, {apparmor.AGENT}"]
 
 
-def uninstall_system(layout: Layout) -> list[str]:
-    """Remove rootsh's hooks. The managed settings file is shared with other
-    tools, so a file changed since install is edited (rootsh's entries only),
-    never restored over the author's changes."""
+def uninstall_system(layout: Layout, loader: Loader | None = None) -> list[str]:
+    """Remove rootsh's hooks and K2 profile. The managed settings file is
+    shared with other tools, so a file changed since install is edited
+    (rootsh's entries only), never restored over the author's changes."""
     _need_root(layout)
     manifest = layout.at(layout.system_manifest)
     changes = _changes(manifest)
+    profile_path = layout.at(apparmor.PROFILE_PATH)
+    if loader is not None and profile_path.exists():  # unload before the file goes
+        loader([apparmor.PARSER, "-R", str(profile_path)])
     path = layout.at(layout.managed)
     entry = next((f for f in changes.files if f["path"] == str(path)), None)
     current = read_regular(path)

@@ -41,7 +41,9 @@ from rootsh.storage.schema import MIGRATIONS
 
 EXIT_OK, EXIT_FAILED, EXIT_USAGE = 0, 1, 2
 NVIDIA_KEY_ENV = "NVIDIA_API_KEY"
-DEFAULT_SOCKET = Path(os.environ.get("XDG_RUNTIME_DIR", "/run/user/0")) / "rootsh" / "rootsh.sock"
+_RUNTIME = Path(os.environ.get("XDG_RUNTIME_DIR", "/run/user/0"))
+DEFAULT_SOCKET = _RUNTIME / "rootsh" / "rootsh.sock"
+DEFAULT_CONTROL = _RUNTIME / "rootsh-control" / "control.sock"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -103,10 +105,24 @@ def _parser() -> argparse.ArgumentParser:
     daemon.add_argument("--socket", type=Path, default=DEFAULT_SOCKET, help="Unix socket path")
     daemon.add_argument("--db", type=Path, required=True, help="runtime database")
     daemon.add_argument("--bundle", type=Path, required=True, help="model bundle directory")
+    daemon.add_argument(
+        "--control", type=Path, default=DEFAULT_CONTROL, help="control socket (approve, launches)"
+    )
     approve = commands.add_parser("approve", help="answer a pending desktop ask")
     approve.add_argument("id", help="decision id (shown in the agent's block reason)")
     approve.add_argument("answer", choices=("allow", "block"))
-    approve.add_argument("--socket", type=Path, default=DEFAULT_SOCKET, help="Unix socket path")
+    approve.add_argument(
+        "--control", type=Path, default=DEFAULT_CONTROL, help="the daemon's control socket"
+    )
+    run = commands.add_parser("run", help="start an agent under rootsh's kernel layers (design 09)")
+    run.add_argument("agent", choices=("claude", "opencode"))
+    run.add_argument("--project", type=Path, help="project directory (default: here)")
+    run.add_argument(
+        "--env", action="append", default=[], metavar="NAME", help="pass one more variable"
+    )
+    run.add_argument("--socket", type=Path, default=DEFAULT_SOCKET, help="event socket")
+    run.add_argument("--control", type=Path, default=DEFAULT_CONTROL, help="control socket")
+    run.add_argument("agent_args", nargs="*", help="-- then the agent's own arguments")
     install_cli.add_parsers(commands)
     return parser
 
@@ -283,9 +299,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "model":
             return _model(args)
         if args.command == "daemon":
-            return daemon_cli.serve(args.socket, args.db, args.bundle)
+            return daemon_cli.serve(args.socket, args.control, args.db, args.bundle)
+        if args.command == "run":
+            from rootsh import run as run_cli
+
+            extra = args.agent_args[1:] if args.agent_args[:1] == ["--"] else args.agent_args
+            agent = "claude_code" if args.agent == "claude" else "opencode"
+            return run_cli.main(agent, args.project, extra, args.env, args.socket, args.control)
         if args.command == "approve":
-            return daemon_cli.approve(args.socket, args.id, args.answer)
+            return daemon_cli.approve(args.control, args.id, args.answer)
         if args.command in ("install", "uninstall", "doctor"):
             return install_cli.run(args)
         return _db(args.db_command, DatabaseKind.from_label(args.kind), args.path)

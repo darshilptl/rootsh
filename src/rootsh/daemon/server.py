@@ -6,10 +6,11 @@ import json
 import os
 import socketserver
 import stat
+from dataclasses import replace
 from pathlib import Path
 
-from rootsh.daemon.peer import peer_of
-from rootsh.daemon.service import Service
+from rootsh.daemon.peer import peer_cgroup, peer_of
+from rootsh.daemon.service import Endpoint, Service
 
 MAX_REQUEST_BYTES = 4 * 1024 * 1024  # hook payloads carry tool output (text cap 256k chars)
 READ_TIMEOUT_S = 10
@@ -21,6 +22,10 @@ class _Handler(socketserver.StreamRequestHandler):
 
     def handle(self) -> None:
         peer = peer_of(self.connection)
+        try:
+            peer = replace(peer, cgroup=peer_cgroup(self.connection, peer.pid))
+        except OSError as exc:
+            peer = replace(peer, cgroup_error=f"{type(exc).__name__}: {exc}")
         line = self.rfile.readline(MAX_REQUEST_BYTES + 1)
         if len(line) > MAX_REQUEST_BYTES or not line.endswith(b"\n"):
             reply: dict[str, object] = {"error": "request too large or not one line"}
@@ -30,15 +35,16 @@ class _Handler(socketserver.StreamRequestHandler):
             except ValueError:
                 reply = {"error": "request is not JSON"}
             else:
-                reply = self.server.service.handle(request, peer)
+                reply = self.server.service.handle(request, peer, self.server.endpoint)
         self.wfile.write(json.dumps(reply).encode() + b"\n")
 
 
 class Server(socketserver.ThreadingUnixStreamServer):
     daemon_threads = True
 
-    def __init__(self, path: Path, service: Service) -> None:
+    def __init__(self, path: Path, service: Service, endpoint: Endpoint = Endpoint.ANY) -> None:
         self.service = service
+        self.endpoint = endpoint
         path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         if path.exists() or path.is_symlink():
             if not stat.S_ISSOCK(path.lstat().st_mode):

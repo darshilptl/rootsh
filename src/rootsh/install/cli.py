@@ -20,6 +20,7 @@ from rootsh.install import (
     uninstall_user,
 )
 from rootsh.install.doctor import doctor
+from rootsh.run.sandbox import code_paths
 
 REPO = Path(__file__).resolve().parents[3]
 DEFAULT_BUNDLE = REPO / "data" / "models" / "p6-a357bba6c02c"
@@ -28,7 +29,9 @@ DEFAULT_BUNDLE = REPO / "data" / "models" / "p6-a357bba6c02c"
 def add_parsers(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     install = commands.add_parser("install", help="install hooks, plugin and daemon (design 08)")
     install.add_argument(
-        "--system", action="store_true", help="the root step: Claude Code managed settings"
+        "--system",
+        action="store_true",
+        help="the root step: Claude Code managed settings, K2 AppArmor profile",
     )
     install.add_argument(
         "--bundle", type=Path, default=DEFAULT_BUNDLE, help="model bundle to install"
@@ -43,6 +46,11 @@ def add_parsers(commands: argparse._SubParsersAction[argparse.ArgumentParser]) -
     for sub in (install, uninstall, check):
         sub.add_argument("--user", help="whose install (default: you, or SUDO_USER under sudo)")
         sub.add_argument("--root", type=Path, default=Path("/"), help="re-root all paths (tests)")
+
+
+def loader(argv: Sequence[str]) -> int:
+    """apparmor_parser, for the system step's K2 profile."""
+    return subprocess.run(list(argv), check=False).returncode  # noqa: S603 - fixed tool path
 
 
 def systemctl(args: Sequence[str]) -> int:
@@ -66,10 +74,12 @@ def run(args: argparse.Namespace) -> int:
             return 1 if any(c.ok is False for c in checks) else 0
         if args.command == "install":
             lines = (
-                install_system(layout) if args.system else install_user(layout, args.bundle, live)
+                install_system(layout, code_paths(), loader if live else None)
+                if args.system
+                else install_user(layout, args.bundle, live)
             )
         elif args.system:
-            lines = uninstall_system(layout)
+            lines = uninstall_system(layout, loader if live else None)
         else:
             lines = uninstall_user(layout, live, force=args.force, keep_db=args.keep_db)
     except InstallError as exc:

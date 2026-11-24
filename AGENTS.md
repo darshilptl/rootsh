@@ -111,8 +111,8 @@ Work runs **one session per phase**. A new session starts from a short prompt
 ("start P4") and orients itself from the repository, not from chat history.
 
 **Current state:**
-- **Done:** P0–P8, squash-merged on `main`, tagged `v0.0.0`–`v0.8.0`.
-  P0–P7 pushed to `origin`; P8 (v0.8.0) not pushed yet.
+- **Done:** P0–P9, squash-merged on `main`, tagged `v0.0.0`–`v0.9.0`.
+  P0–P8 pushed (P8 2026-11-21); P9 (2026-11-24) not pushed yet.
 - **P4 result:** gold set of 192 sandboxed runs (176 OpenCode on NVIDIA NIM
   Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored).
   See `docs/results/04-trace-harness.md`.
@@ -150,8 +150,20 @@ Work runs **one session per phase**. A new session starts from a short prompt
   `docs/results/08-hooks-install.md`; scripts `research/p8-gate/{run_gate,report}.py`.
   Host cycle on the author's machine (results 08 §6): install, doctor
   14/14, idempotent re-install, clean uninstall; currently not installed.
-- **Next:** P9 per `docs/plan.md`: kernel K1–K3 (+ K4 stretch), `rootsh run`
-  in a `rootsh-agent-*.scope`, self-protection of rootsh's files.
+- **P9 result:** `rootsh run claude|opencode [--project] [--env NAME] [--
+  args]`: register on the control socket, then `systemd-run --user --scope
+  rootsh-agent-<id>` → (`aa-exec -p rootsh-bwrap` if K2 loaded) → bwrap →
+  `rootsh.kernel.confine` (K2 check, K1 Landlock fs+net+scope, K3 seccomp).
+  Daemon: event socket (`$XDG_RUNTIME_DIR/rootsh/`, bound into the sandbox)
+  and control socket (`…/rootsh-control/`, never bound: approve, register);
+  launch found from the caller's cgroup (pidfd-pinned), unregistered tool
+  calls blocked, project from the launcher (OpenCode F2 now fires), model
+  allow → ask. ADR-0018 accepted in part; design 09. Adversarial tests in
+  `tests/run/`; live headless Claude run in the sandbox (results 09 §3).
+  K2 is entered outside bwrap (unpriv_bwrap forbids change_profile); the
+  live K2 test passed after the author's sudo load (results 09 §7). Not built (limits, results 09 §6): root-owned sockets
+  and system service, audit denial reader/pop-ups, prompt confirmation.
+- **Next:** write-up. K4 (BPF-LSM intent scope) is post-P9 stretch.
 
 **To start a phase, read in this order:**
 1. **This file:** the rules, layout, and git workflow.
@@ -168,19 +180,13 @@ Work runs **one session per phase**. A new session starts from a short prompt
 6. **`git log --oneline`:** one commit per phase.
 
 **Open items carried forward:**
-- **P9 (from P8):** event forgery: an agent can send fake prompts or tool
-  output to the daemon socket (hooks share its process tree); OpenCode
-  events have no `cwd`, so F2 never fires for OpenCode; the system user and
-  `/opt/rootsh` deferred from ADR-0003 (ADR-0017).
-- **P9 (from P7):** `rootsh run` must launch agents in a
-  `rootsh-agent-*.scope`, and Landlock must deny agents
-  `/run/user/<uid>/bus` and `/run/user/<uid>/systemd`, or an agent can leave
-  its scope and approve its own asks (results 07 §6).
-- **P9:** agents can read the defense's own plugin in `.opencode/plugins/`
-  (seen in P3); protect it.
-- **P9 (seen in P5 labelling):** in several gold runs an agent read
-  rootsh's own `.venv` and `data/` through the sandbox; the defense's files
-  must be unreadable to agents.
+- **From P9 (results 09 §6):** a prompt recorded from a hook is still
+  trusted for model features (no out-of-band confirmation); same-UID
+  sockets, so an agent launched outside `rootsh run` can reach the control
+  socket (its tool calls are blocked); no kernel-denial reader (audit off);
+  third-party OpenCode plugins/MCP
+  not disabled; rootsh's code is readable (not secret) inside the sandbox,
+  `data/` and state are not bound.
 - **Collection commands** (from the repo root; `research/gold/make_toolenv.sh
   data/gold/toolenv` first): `uv run rootsh collect run --catalog
   research/gold/scenarios --db data/gold/research.db --data data/gold
