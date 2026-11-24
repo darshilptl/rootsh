@@ -10,8 +10,8 @@ from typing import Any
 
 import pytest
 
-from rootsh.events import Agent, EventKind, Tool
-from rootsh.normalize import normalize
+from rootsh.analysis.events import Agent, EventKind, Tool
+from rootsh.analysis.normalize import normalize
 from rootsh.storage.db import DatabaseKind, DatabaseKindError, open_database
 from rootsh.storage.events_store import ingest
 from rootsh.storage.migrations import (

@@ -19,8 +19,6 @@ node_modules/
 traces/
 .env*
 
-# Raw output of research probes
-research/**/out/
-
 # Local data: corpora, research DBs, raw traces, agent output (AGENTS.md §6)
-data/
+data/*
+!data/README.md

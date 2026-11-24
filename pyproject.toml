@@ -1,6 +1,6 @@
 [project]
 name = "rootsh"
-version = "0.11.0"
+version = "0.12.0"
 description = "Defense layer for host-level coding agents (Claude Code, OpenCode)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -30,7 +30,7 @@ build-backend = "uv_build"
 line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
-extend-exclude = ["docs", "research/p0-verification", "research/old-audit"]  # kept as run
+extend-exclude = ["docs"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "C4", "RET", "N", "S", "BLE"]
@@ -41,7 +41,7 @@ ignore = ["S101"]  # assert is the pytest idiom
 
 [tool.mypy]
 strict = true
-files = ["src", "tests", "research/robustness"]
+files = ["src", "tests", "research/effects_robustness.py"]
 python_version = "3.12"
 mypy_path = "src:tests"
 explicit_package_bases = true

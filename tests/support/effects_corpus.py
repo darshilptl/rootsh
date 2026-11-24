@@ -7,9 +7,9 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-from rootsh.effects import Analysis, Context, analyze_shell, analyze_tool
-from rootsh.events import Tool
-from rootsh.normalize import claude_code, opencode
+from rootsh.analysis.effects import Analysis, Context, analyze_shell, analyze_tool
+from rootsh.analysis.events import Tool
+from rootsh.analysis.normalize import claude_code, opencode
 from support import FIXTURES_DIR
 
 CORPUS_PATH = FIXTURES_DIR / "effects_corpus.json"

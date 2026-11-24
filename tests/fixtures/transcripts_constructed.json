@@ -3,7 +3,7 @@
   "cwd": "/w",
   "home": "/home/u"
  },
- "notes": "Constructed transcripts in both agents' real payload formats; labels written by hand before the provenance engine existed (docs/design/03-provenance.md \u00a77).",
+ "notes": "Constructed transcripts in both agents' real payload formats; labels written by hand before the provenance engine existed (docs/phases/03-provenance.md \u00a77).",
  "transcripts": [
   {
    "id": "claude_code-user_exact_absolute",

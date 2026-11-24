@@ -7,7 +7,7 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 
-from rootsh.events import Agent, AgentEvent, EventKind, Tool, canonical_json
+from rootsh.analysis.events import Agent, AgentEvent, EventKind, Tool, canonical_json
 
 
 @dataclass(frozen=True, slots=True)

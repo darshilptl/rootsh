@@ -8,7 +8,7 @@ K4 would compile the user's request into a per-session kernel policy that BPF-LS
 
 ## Decision
 
-K4 is a **stretch goal**. The core kernel layer is K1–K3 (Landlock, AppArmor, seccomp). K4 is attempted after P9, and only because P0 showed a BPF-LSM program loads and enforces on this host (`docs/results/00-verification.md` §3.5).
+K4 is a **stretch goal**. The core kernel layer is K1–K3 (Landlock, AppArmor, seccomp). K4 is attempted after P9, and only because P0 showed a BPF-LSM program loads and enforces on this host (`docs/phases/00-verification.md` §3.5).
 
 ## Consequences
 

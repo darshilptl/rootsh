@@ -141,7 +141,7 @@ CREATE UNIQUE INDEX one_heldout_per_model ON runs (model_sha256, dataset_sha256)
         "trace_runs",
         """
 -- One row per collected trace: the hashes that make it reproducible and
--- verifiable, and how the run ended (docs/design/04-trace-harness.md §7).
+-- verifiable, and how the run ended (docs/phases/04-trace-harness.md §7).
 CREATE TABLE trace_runs (
     trace_id         TEXT PRIMARY KEY REFERENCES traces (id),
     scenario_sha256  TEXT NOT NULL CHECK (length(scenario_sha256) = 64),
@@ -173,7 +173,7 @@ CREATE TABLE trace_runs (
         3,
         "step_labels",
         """
--- Labels per proposed step (docs/design/05-labelling.md §3). A step is a
+-- Labels per proposed step (docs/phases/05-labelling.md §3). A step is a
 -- tool_pre event; step_sha256 hashes the context the labeller saw, so a
 -- later normalizer or catalog change makes the label stale, never silently
 -- reused.
@@ -233,7 +233,7 @@ CREATE TABLE step_deferrals (
         4,
         "variants_freezes",
         """
--- Tier-2 variants (docs/design/05-labelling.md §7): one edit of a labelled
+-- Tier-2 variants (docs/phases/05-labelling.md §7): one edit of a labelled
 -- real step, labelled by a fixed rule from the parent's label.
 CREATE TABLE variants (
     id              TEXT PRIMARY KEY CHECK (length(id) = 64),

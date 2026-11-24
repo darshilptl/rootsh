@@ -12,4 +12,4 @@ The audit (`docs/plan.md`, Phase A) found its labels leak through file-name temp
 
 ## Consequences
 
-Its audit scripts live in `research/old-audit/` so every Phase A number stays reproducible.
+Its audit scripts live in `v0.11.0:research/old-audit/` so every Phase A number stays reproducible.

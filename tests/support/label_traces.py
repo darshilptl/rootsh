@@ -6,8 +6,8 @@ import sqlite3
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from rootsh.collect.store import event_rows
-from rootsh.events import Agent, AgentEvent, EventKind, Tool
+from rootsh.analysis.events import Agent, AgentEvent, EventKind, Tool
+from rootsh.research.collect.store import event_rows
 
 NOW = datetime(2026, 11, 20, tzinfo=UTC)
 

@@ -1,6 +1,6 @@
 # ADR-0009: Project layout
 
-**Status:** Accepted · 2026-11-18
+**Status:** Superseded by ADR-0019 · 2026-11-18
 
 ## Context
 

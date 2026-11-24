@@ -6,7 +6,7 @@
    "USER": "u"
   }
  },
- "notes": "Hand-labelled before the extractor existed (docs/design/02-effects.md §7). Entries with partial=true compare only parse_error (and that 'parse_error' is an opaque reason). Entries with label_fix were corrected after the first run; the reason is recorded on the entry.",
+ "notes": "Hand-labelled before the extractor existed (docs/phases/02-effects.md §7). Entries with partial=true compare only parse_error (and that 'parse_error' is an opaque reason). Entries with label_fix were corrected after the first run; the reason is recorded on the entry.",
  "entries": [
   {
    "cmd": "rm -rf ./build",

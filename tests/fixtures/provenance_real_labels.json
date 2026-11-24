@@ -1,5 +1,5 @@
 {
- "notes": "Hand labels for tests/fixtures/transcripts_real.json, written from the recorded outputs before the provenance engine existed (docs/design/03-provenance.md). Every tool_pre not listed here must have no critical arguments.",
+ "notes": "Hand labels for tests/fixtures/transcripts_real.json, written from the recorded outputs before the provenance engine existed (docs/phases/03-provenance.md). Every tool_pre not listed here must have no critical arguments.",
  "actions": [
   {"session": "claude_code-content_instructions", "action": 5, "arguments": [
    {"target": "make", "kind": "exec", "sources": {"content": {"relation": "name", "event": 2, "same_turn": true}}}]},

@@ -6,15 +6,15 @@ Architecture decision records. One file per decision; a decision is changed only
 |---|---|---|
 | [0001](0001-bpf-lsm-intent-scope-is-a-stretch-goal.md) | BPF-LSM intent scope (K4) is a stretch goal | Accepted |
 | [0002](0002-trace-budget-from-measured-cost.md) | Size the trace budget from measured cost | Accepted |
-| [0003](0003-one-time-root-install.md) | Require a one-time root install | Accepted |
-| [0004](0004-second-annotator-before-dataset-freeze.md) | A second annotator before the dataset freeze | Accepted |
+| [0003](0003-one-time-root-install.md) | Require a one-time root install | Accepted in part (refined by 0017; system user superseded by 0018) |
+| [0004](0004-second-annotator-before-dataset-freeze.md) | A second annotator before the dataset freeze | Not carried out: its fallback applied (0011), then replaced by 0013 |
 | [0005](0005-archive-researchwork.md) | Archive the old researchwork project; reuse nothing | Accepted |
 | [0006](0006-tree-sitter-bash-for-effects.md) | Parse shell with tree-sitter-bash | Accepted |
 | [0007](0007-git-state-via-libgit2.md) | Read git state through libgit2, never the git CLI | Accepted |
 | [0008](0008-tiered-dataset.md) | A tiered dataset: real gold set, grounded generated training data | Accepted |
-| [0009](0009-project-layout.md) | Project layout | Accepted |
+| [0009](0009-project-layout.md) | Project layout | Superseded by 0019 |
 | [0010](0010-labelling-scope-and-tiered-gates.md) | Labelling scope, rule labels, and shortcut gates per tier | Accepted (item 3 superseded by 0011) |
-| [0011](0011-author-test-retest-instead-of-guide.md) | Author test–retest instead of a second annotator (supersedes 0010 item 3) | Accepted |
+| [0011](0011-author-test-retest-instead-of-guide.md) | Author test–retest instead of a second annotator (supersedes 0010 item 3) | Superseded by 0013 |
 | [0012](0012-disclosed-assistant-annotator.md) | A disclosed AI annotator for the training tail, measured by kappa | Accepted |
 | [0013](0013-human-evaluation-labels-model-training-labels.md) | Human labels for evaluation, disclosed model labels for training (supersedes 0011, 0012 items 2 and 5) | Accepted |
 | [0014](0014-labels-after-agreement-and-audits.md) | The labelled dataset after the agreement and R1 audits (applies 0013 item 3; amends design 05 gates 1-3; human-only training) | Accepted |
@@ -22,3 +22,4 @@ Architecture decision records. One file per decision; a decision is changed only
 | [0016](0016-p7-policy-and-daemon.md) | P7 policy order, fast paths, and where probes run | Accepted |
 | [0017](0017-p8-two-step-install-and-hook-bridges.md) | P8 two-step install, one client for both hooks, sandbox gate (refines 0003) | Accepted |
 | [0018](0018-p9-trust-containment-and-service-identity.md) | P9 trust, containment, and per-user service identity (supersedes 0003 system-user choice; refines 0016/0017) | Accepted in part |
+| [0019](0019-minimal-layout-and-layered-src.md) | Minimal layout; src in four groups; runtime never imports research (supersedes 0009) | Accepted |

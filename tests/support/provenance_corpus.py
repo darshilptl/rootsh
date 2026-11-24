@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from rootsh.effects import Context
-from rootsh.events import Agent, AgentEvent
-from rootsh.normalize import normalize
-from rootsh.provenance import trace
+from rootsh.analysis.effects import Context
+from rootsh.analysis.events import Agent, AgentEvent
+from rootsh.analysis.normalize import normalize
+from rootsh.analysis.provenance import trace
 from support import FIXTURES_DIR
 
 NOW = datetime(2026, 11, 18, 12, 0, tzinfo=UTC)

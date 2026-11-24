@@ -16,7 +16,7 @@ this development session included.
    plugin) then `sudo rootsh install --system` (managed settings only).
    Uninstall reverses the order. The system user and `/opt/rootsh` move to
    P9 with self-protection.
-2. **One client:** both hooks call `rootsh.daemon.client.decide()`; the
+2. **One client:** both hooks call `rootsh.enforcement.daemon.client.decide()`; the
    OpenCode plugin spawns a Python bridge instead of speaking the socket
    protocol in TypeScript.
 3. **Manifest-based uninstall:** prior bytes are kept; a file changed since
