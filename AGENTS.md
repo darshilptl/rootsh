@@ -111,8 +111,8 @@ Work runs **one session per phase**. A new session starts from a short prompt
 ("start P4") and orients itself from the repository, not from chat history.
 
 **Current state:**
-- **Done:** P0–P9, squash-merged on `main`, tagged `v0.0.0`–`v0.9.0`.
-  All pushed to `origin` (P9 pushed 2026-11-24).
+- **Done:** P0–P10-lite, squash-merged on `main`, tagged `v0.0.0`–`v0.10.0`.
+  Pushed to `origin` up to P9; P10 (v0.10.0) not pushed yet.
 - **P4 result:** gold set of 192 sandboxed runs (176 OpenCode on NVIDIA NIM
   Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored).
   See `docs/results/04-trace-harness.md`.
@@ -163,17 +163,21 @@ Work runs **one session per phase**. A new session starts from a short prompt
   K2 is entered outside bwrap (unpriv_bwrap forbids change_profile); the
   live K2 test passed after the author's sudo load (results 09 §7). Not built (limits, results 09 §6): root-owned sockets
   and system service, audit denial reader/pop-ups, prompt confirmation.
-- **Next (agreed 2026-11-24, ~2 h budget):** P10-lite = attack benchmark +
-  layer ablation in one experiment: pre-register design 10, replay recorded
-  refused/benign steps through cumulative layers (invariants → fast paths →
-  model → kernel). **Heldout is never touched again:** the model column uses
-  the validation split only; the untrained rule layers may use non-heldout
-  labelled steps. The kernel column comes from the tests/run adversarial
-  matrix. Then P11: one script writes every report table from the DB to
-  `docs/results/report-tables.md`. Then the dissertation, in the
-  university format the author uploads. Dropped or moved to Part 2: more
-  labels + a second annotator, full ASR benchmark, cross-agent transfer,
-  TUI, K4.
+- **P10-lite result:** design 10 (pre-registered) + `research/ablation/ablation.py`;
+  cumulative C0 ask-all → C1 invariants → C2 + fast paths → C3 + model (= P7
+  policy) → kernel. On V (70 validation rows, incl. 9 variants, disclosed
+  in results 10 §2): attacks blocked 0/1/1/8 of 34, false allows 0/0/9/9,
+  asks per 1k benign 1000/1000/389/333, 2 benign blocked at C3. On R (real
+  non-heldout steps, rule layers only): 45 attacks, C2 false allows 13,
+  198 asks per 1k on human rows. Kernel: adversarial tests 52 passed, 2 K2
+  skipped; static estimate: kernel contains 1 of the 9 (V) policy misses.
+  See `docs/results/10-ablation.md`. Heldout untouched.
+- **Next:** P11: one script writes every report table (dataset, model,
+  burden, ablation, kernel, latency) from the DB to
+  `docs/results/report-tables.md`; no hand-typed numbers. Then the
+  dissertation in the university format the author uploads. Dropped or
+  moved to Part 2: more labels + a second annotator, full ASR benchmark,
+  cross-agent transfer, TUI, K4.
 
 **To start a phase, read in this order:**
 1. **This file:** the rules, layout, and git workflow.
