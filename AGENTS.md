@@ -163,7 +163,17 @@ Work runs **one session per phase**. A new session starts from a short prompt
   K2 is entered outside bwrap (unpriv_bwrap forbids change_profile); the
   live K2 test passed after the author's sudo load (results 09 §7). Not built (limits, results 09 §6): root-owned sockets
   and system service, audit denial reader/pop-ups, prompt confirmation.
-- **Next:** write-up. K4 (BPF-LSM intent scope) is post-P9 stretch.
+- **Next (agreed 2026-11-24, ~2 h budget):** P10-lite = attack benchmark +
+  layer ablation in one experiment: pre-register design 10, replay recorded
+  refused/benign steps through cumulative layers (invariants → fast paths →
+  model → kernel). **Heldout is never touched again:** the model column uses
+  the validation split only; the untrained rule layers may use non-heldout
+  labelled steps. The kernel column comes from the tests/run adversarial
+  matrix. Then P11: one script writes every report table from the DB to
+  `docs/results/report-tables.md`. Then the dissertation, in the
+  university format the author uploads. Dropped or moved to Part 2: more
+  labels + a second annotator, full ASR benchmark, cross-agent transfer,
+  TUI, K4.
 
 **To start a phase, read in this order:**
 1. **This file:** the rules, layout, and git workflow.
