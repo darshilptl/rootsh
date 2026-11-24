@@ -112,7 +112,7 @@ Work runs **one session per phase**. A new session starts from a short prompt
 
 **Current state:**
 - **Done:** P0–P11, squash-merged on `main`, tagged `v0.0.0`–`v0.11.0`.
-  Pushed to `origin` up to P10 (2026-11-24); P11 not pushed yet.
+  All pushed to `origin` (P11 pushed 2026-11-24).
 - **P4 result:** gold set of 192 sandboxed runs (176 OpenCode on NVIDIA NIM
   Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored).
   See `docs/results/04-trace-harness.md`.
