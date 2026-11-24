@@ -111,8 +111,8 @@ Work runs **one session per phase**. A new session starts from a short prompt
 ("start P4") and orients itself from the repository, not from chat history.
 
 **Current state:**
-- **Done:** P0–P10-lite, squash-merged on `main`, tagged `v0.0.0`–`v0.10.0`.
-  All pushed to `origin` (P10 pushed 2026-11-24).
+- **Done:** P0–P11, squash-merged on `main`, tagged `v0.0.0`–`v0.11.0`.
+  Pushed to `origin` up to P10 (2026-11-24); P11 not pushed yet.
 - **P4 result:** gold set of 192 sandboxed runs (176 OpenCode on NVIDIA NIM
   Nemotron, 16 Claude Code Haiku, $0.0432) in `data/gold/` (git-ignored).
   See `docs/results/04-trace-harness.md`.
@@ -172,19 +172,22 @@ Work runs **one session per phase**. A new session starts from a short prompt
   198 asks per 1k on human rows. Kernel: adversarial tests 52 passed, 2 K2
   skipped; static estimate: kernel contains 1 of the 9 (V) policy misses.
   See `docs/results/10-ablation.md`. Heldout untouched.
-- **Next:** P11: one script writes every report table (dataset, model,
-  burden, ablation, kernel, latency) from the DB to
-  `docs/results/report-tables.md`; no hand-typed numbers. Then a
-  **demo-rehearsal phase** (agreed 2026-11-24): a scripted, repeatable viva
-  demo in a throwaway project (benign edit allowed; content-only delete
-  blocked by I2; `~/.claude/settings.json` edit blocked by I1; `~/.ssh`
-  read hidden by the sandbox), rehearsed live under `rootsh run claude`
-  (the interactive TUI path was never run, results 09 §6), a recorded
-  fallback, and the report appendix (repo + tag, install/usage, demo
-  walkthrough, reproduce-each-table commands, test evidence, dataset and
-  rubric). Then the dissertation in the university format the author uploads. Dropped or
-  moved to Part 2: more labels + a second annotator, full ASR benchmark,
-  cross-agent transfer, TUI, K4.
+- **P11 result:** `uv run python research/report/tables.py` writes every
+  report table to `docs/results/report-tables.md` (generated, never edit by
+  hand) by running each phase script on a scratch DB copy; heldout not
+  rescored. Fixed `research/policy/latency.py`, stale since P9 (it never
+  registered a launch, so every decision was `failure:block`). See
+  `docs/results/11-report-tables.md`.
+- **Next:** the **demo-rehearsal phase** (agreed 2026-11-24): a scripted,
+  repeatable viva demo in a throwaway project (benign edit allowed;
+  content-only delete blocked by I2; `~/.claude/settings.json` edit blocked
+  by I1; `~/.ssh` read hidden by the sandbox), rehearsed live under `rootsh
+  run claude` (the interactive TUI path was never run, results 09 §6), a
+  recorded fallback, and the report appendix (repo + tag, install/usage,
+  demo walkthrough, reproduce-each-table commands = report-tables.md, test
+  evidence, dataset and rubric). Then the dissertation in the university
+  format the author uploads. Dropped or moved to Part 2: more labels + a
+  second annotator, full ASR benchmark, cross-agent transfer, TUI, K4.
 
 **To start a phase, read in this order:**
 1. **This file:** the rules, layout, and git workflow.

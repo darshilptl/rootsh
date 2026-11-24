@@ -1,6 +1,9 @@
 """P7 latency (design 07 §8 item 5): host-state probes and whole decisions.
 
 Nothing is executed: commands are only decided. Probes are read-only.
+Since P9 the daemon blocks tool calls from unregistered launches, so the
+script registers one launch (from this process's own, non-agent cgroup) and
+sends events as a peer inside that launch's `rootsh-agent-<id>.scope`.
 Usage (runtime DB goes to a scratch directory):
 
   uv run python research/policy/latency.py <large repo> data/models/p6-a357bba6c02c <scratch dir>
@@ -13,6 +16,7 @@ import shlex
 import statistics
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import pygit2
@@ -68,11 +72,17 @@ def main(repo_arg: str, bundle: str, scratch: str) -> None:
     conn = open_database(Path(scratch) / "latency-runtime.db", DatabaseKind.RUNTIME, threads=True)
     migrate(conn, MIGRATIONS[DatabaseKind.RUNTIME])
     svc = Service(conn, model, home=home)
+    launch = uuid.uuid4().hex
+    reg = svc.handle({"op": "register", "launch": launch, "agent": "claude_code",
+                      "project": str(repo), "home": home, "layers": []}, ME)  # fmt: skip
+    if not reg.get("ok"):
+        raise SystemExit(f"register failed: {reg}")
+    agent = Peer(ME.pid, ME.uid, ME.gid, cgroup=f"0::/user.slice/rootsh-agent-{launch}.scope")
     session = f"latency-{time.time_ns()}"
     base = {"session_id": session, "cwd": str(repo)}
     svc.handle({"op": "event", "agent": "claude_code", "hook": "UserPromptSubmit",
                 "payload": {**base, "hook_event_name": "UserPromptSubmit", "prompt": "Tidy up.",
-                            "prompt_id": "p"}}, ME)  # fmt: skip
+                            "prompt_id": "p"}}, agent)  # fmt: skip
     n = 0
 
     def decide(command: str) -> tuple[float, str]:
@@ -84,7 +94,7 @@ def main(repo_arg: str, bundle: str, scratch: str) -> None:
         }  # fmt: skip
         started = time.perf_counter()
         reply = svc.handle({"op": "event", "agent": "claude_code", "hook": "PreToolUse",
-                            "payload": payload, "ask": "native"}, ME)  # fmt: skip
+                            "payload": payload, "ask": "native"}, agent)  # fmt: skip
         return (time.perf_counter() - started) * 1000, f"{reply['layer']}:{reply['decision']}"
 
     for label, commands in (
